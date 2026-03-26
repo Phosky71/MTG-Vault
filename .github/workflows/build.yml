@@ -1,0 +1,16 @@
+name: macOS Build
+on:
+  workflow_dispatch:  # Clic botón para correr
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - uses: dtolnay/rust-toolchain@stable
+    - run: npm ci  # yarn ci si usas yarn
+    - uses: tauri-apps/tauri-action@v0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
