@@ -166,9 +166,11 @@ export const TRANSLATIONS = {
         priority_high: 'Alta',
         priority_medium: 'Media',
         priority_low: 'Baja',
+        version: 'Versión / Impresión',
     },
 
     en: {
+        version: 'Version / Printing',
         nav_collection: 'Collection',
         nav_decks: 'Decks',
         nav_dashboard: 'Dashboard',

@@ -33,15 +33,27 @@
 
         <nav class="flex gap-1 flex-1 flex-wrap" id="main-nav">
             <button class="nav-btn active" data-target="view-collection" data-i18n="nav_collection">Colección</button>
-            <button class="nav-btn" data-target="view-decks"      data-i18n="nav_decks">Mazos</button>
-            <button class="nav-btn" data-target="view-dashboard"  data-i18n="nav_dashboard">Dashboard</button>
-            <button class="nav-btn" data-target="view-search"     data-i18n="nav_search">Buscar</button>
-            <!-- ← NUEVO -->
-            <button class="nav-btn" data-target="view-wishlist"   data-i18n="nav_wishlist">💭 Wishlist</button>
+            <button class="nav-btn" data-target="view-decks" data-i18n="nav_decks">Mazos</button>
+            <button class="nav-btn" data-target="view-dashboard" data-i18n="nav_dashboard">Dashboard</button>
+            <button class="nav-btn" data-target="view-search" data-i18n="nav_search">Buscar</button>
+            <button class="nav-btn" data-target="view-wishlist" data-i18n="nav_wishlist">💭 Wishlist</button>
         </nav>
 
         <div class="flex items-center gap-3 ml-auto flex-shrink-0">
             <span id="header-total-value" class="text-emerald-400 font-bold text-sm tabular-nums">0.00 €</span>
+
+            <!-- ── Backup ── -->
+            <button id="btn-backup-download"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-400 border border-emerald-400/30 bg-emerald-400/10 hover:bg-emerald-400/20 transition-colors whitespace-nowrap"
+                    title="Descargar backup completo">
+                💾
+            </button>
+            <button id="btn-backup-import"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold text-violet-400 border border-violet-400/30 bg-violet-400/10 hover:bg-violet-400/20 transition-colors whitespace-nowrap"
+                    title="Restaurar desde fichero de backup">
+                ♻️
+            </button>
+
             <button id="lang-toggle"
                     class="px-3 py-1.5 rounded-lg text-xs font-bold text-sky-400 border border-sky-400/30 bg-sky-400/10 hover:bg-sky-400/20 transition-colors whitespace-nowrap">
                 🌐 <span id="lang-label">ES</span>
@@ -62,13 +74,13 @@
                    data-i18n-placeholder="search_placeholder"
                    placeholder="Buscar cartas...">
             <select id="sort-filter" class="input-glass w-auto">
-                <option value=""            data-i18n="sort_default">Ordenar...</option>
-                <option value="price-desc"  data-i18n="sort_price_desc">Precio (Mayor a Menor)</option>
-                <option value="price-asc"   data-i18n="sort_price_asc">Precio (Menor a Mayor)</option>
-                <option value="name-asc"    data-i18n="sort_name_asc">Nombre (A-Z)</option>
+                <option value="" data-i18n="sort_default">Ordenar...</option>
+                <option value="price-desc" data-i18n="sort_price_desc">Precio (Mayor a Menor)</option>
+                <option value="price-asc" data-i18n="sort_price_asc">Precio (Menor a Mayor)</option>
+                <option value="name-asc" data-i18n="sort_name_asc">Nombre (A-Z)</option>
             </select>
             <select id="color-filter" class="input-glass w-auto">
-                <option value=""  data-i18n="color_all">Todos los colores</option>
+                <option value="" data-i18n="color_all">Todos los colores</option>
                 <option value="W" data-i18n="color_white">Blanco</option>
                 <option value="U" data-i18n="color_blue">Azul</option>
                 <option value="B" data-i18n="color_black">Negro</option>
@@ -97,6 +109,13 @@
                     </button>
                 </div>
 
+                <!-- Botones export colección -->
+                <div class="flex flex-wrap gap-1 mb-3">
+                    <button id="btn-export-csv"  class="btn-secondary text-xs flex-1">📤 CSV</button>
+                    <button id="btn-export-txt"  class="btn-secondary text-xs flex-1">📄 TXT</button>
+                    <button id="btn-export-json" class="btn-secondary text-xs flex-1">💾 JSON</button>
+                </div>
+
                 <ul class="flex flex-row flex-wrap gap-1 md:flex-col md:flex-nowrap md:gap-0.5" id="folder-list">
                     <li class="folder-nav-item active" data-folder="">
                         <span>📚</span>
@@ -123,7 +142,7 @@
     <section id="view-decks" class="view-section hidden">
 
         <form id="deck-import-form" class="flex flex-wrap gap-3 mb-3">
-            <input type="url"  id="deck-url-input"  class="input-glass flex-[2] min-w-[200px]"
+            <input type="url" id="deck-url-input" class="input-glass flex-[2] min-w-[200px]"
                    data-i18n-placeholder="deck_url_placeholder" placeholder="URL Moxfield, Archidekt...">
             <input type="text" id="deck-name-input" class="input-glass flex-1 min-w-[150px]"
                    data-i18n-placeholder="deck_name_placeholder" placeholder="Nombre del mazo">
@@ -156,14 +175,14 @@
 
         <div class="flex gap-3 mb-6">
             <select id="format-filter" class="input-glass w-auto">
-                <option value=""        data-i18n="format_all">Todos los formatos</option>
+                <option value="" data-i18n="format_all">Todos los formatos</option>
                 <option value="Standard">Standard</option>
                 <option value="Pioneer">Pioneer</option>
                 <option value="Modern">Modern</option>
                 <option value="Legacy">Legacy</option>
                 <option value="Commander">Commander</option>
                 <option value="Pauper">Pauper</option>
-                <option value="Casual"  data-i18n="format_casual">Otro / Casual</option>
+                <option value="Casual" data-i18n="format_casual">Otro / Casual</option>
             </select>
             <button id="btn-new-deck" class="btn-primary text-sm">＋ Nuevo mazo</button>
         </div>
@@ -241,7 +260,7 @@
                        data-i18n-placeholder="type_placeholder"
                        placeholder="Tipo...">
                 <select id="sf-format-select" class="input-glass w-auto text-sm">
-                    <option value=""           data-i18n="format_all">Todos los formatos</option>
+                    <option value="" data-i18n="format_all">Todos los formatos</option>
                     <option value="standard">Standard</option>
                     <option value="pioneer">Pioneer</option>
                     <option value="modern">Modern</option>
@@ -261,19 +280,20 @@
                     <input type="number" id="sf-price-max" class="price-range-input" min="0" step="0.5" placeholder="Max">
                 </div>
                 <select id="sf-sort-select" class="input-glass w-auto text-sm">
-                    <option value="name:asc"      data-i18n="sort_name_asc">Nombre A-Z</option>
-                    <option value="eur:desc"       data-i18n="sort_price_desc">Precio € ↓ Mayor</option>
-                    <option value="eur:asc"        data-i18n="sort_price_asc">Precio € ↑ Menor</option>
+                    <option value="name:asc" data-i18n="sort_name_asc">Nombre A-Z</option>
+                    <option value="eur:desc" data-i18n="sort_price_desc">Precio € ↓ Mayor</option>
+                    <option value="eur:asc" data-i18n="sort_price_asc">Precio € ↑ Menor</option>
                     <option value="usd:desc">Precio $ ↓ Mayor</option>
                     <option value="usd:asc">Precio $ ↑ Menor</option>
-                    <option value="released:desc"  data-i18n="sort_newest">Más reciente</option>
-                    <option value="edhrec:desc"    data-i18n="sort_popularity">Popularidad</option>
-                    <option value="rarity:desc"    data-i18n="sort_rarity">Rareza</option>
-                    <option value="cmc:asc"        data-i18n="sort_cmc">Coste de maná</option>
+                    <option value="released:desc" data-i18n="sort_newest">Más reciente</option>
+                    <option value="edhrec:desc" data-i18n="sort_popularity">Popularidad</option>
+                    <option value="rarity:desc" data-i18n="sort_rarity">Rareza</option>
+                    <option value="cmc:asc" data-i18n="sort_cmc">Coste de maná</option>
                 </select>
                 <button id="sf-clear-filters"
                         class="text-xs text-slate-400 hover:text-slate-200 transition-colors px-2 py-1.5 rounded-md hover:bg-white/5 flex-shrink-0"
-                        data-i18n="clear_filters">✕ Limpiar</button>
+                        data-i18n="clear_filters">✕ Limpiar
+                </button>
                 <span id="sf-results-info" class="text-xs text-slate-500 ml-auto tabular-nums"></span>
             </div>
         </div>
@@ -288,7 +308,7 @@
         </div>
     </section>
 
-    <!-- ── WISHLIST ── -->  <!-- ← MOVIDA DENTRO DE <main> -->
+    <!-- ── WISHLIST ── -->
     <section id="view-wishlist" class="view-section hidden p-4 max-w-6xl mx-auto w-full">
 
         <div class="flex flex-wrap items-center gap-3 mb-5">
@@ -341,7 +361,8 @@
         <div class="glass-card w-full max-w-2xl relative max-h-[92vh] overflow-y-auto modal-anim">
             <button id="sf-modal-close"
                     class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full
-                           bg-white/8 hover:bg-red-400/20 hover:text-red-400 transition-colors text-slate-400 text-sm z-10">✕
+                           bg-white/8 hover:bg-red-400/20 hover:text-red-400 transition-colors text-slate-400 text-sm z-10">
+                ✕
             </button>
             <div id="sf-modal-body" class="p-6"></div>
         </div>
@@ -384,9 +405,9 @@
                     class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/8 hover:bg-white/15 transition-colors">
                 📋 Importar lista
             </button>
-            <button id="builder-export-btn" class="btn-primary text-xs py-1.5 px-3">
-                ↗ Exportar
-            </button>
+            <button id="builder-export-txt-btn"  class="btn-secondary text-xs">📋 Copiar</button>
+            <button id="builder-export-csv-btn"  class="btn-secondary text-xs">📥 CSV</button>
+            <button id="builder-export-json-btn" class="btn-secondary text-xs">💾 JSON</button>
         </div>
     </div>
 

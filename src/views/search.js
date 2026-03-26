@@ -5,7 +5,7 @@ import {showToast} from '../utils/ui.js';
 import {renderFolderSidebar, updateHeaderValue} from './collection.js';
 import * as SF from '../api/scryfall.js';
 import {cacheCards, cacheRulings, cacheSearch, getCachedRulings, getCachedSearch} from '../core/db.js';
-import { addToWishlist } from './wishlist.js';
+import {addToWishlist} from './wishlist.js';
 
 const esc = s => String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -279,6 +279,7 @@ function skeletonHTML(n) {
 
 // ── MODAL DETALLE ──────────────────────────────────────────────
 async function openSFModal(card) {
+    let activeCard = card;
     const modal = document.getElementById('sf-modal');
     const body = document.getElementById('sf-modal-body');
     const prices = SF.getPrices(card);
@@ -364,6 +365,18 @@ async function openSFModal(card) {
           <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2">${t('rulings')}</p>
           <div id="sf-rulings" class="text-sm text-slate-400 italic">${t('loading_rulings')}</div>
         </div>
+        
+        <!-- Versiones / Impresiones -->
+        <div class="mb-3">
+          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+            ${t('version')}
+          </p>
+          <select id="sf-version-select"
+                  class="input-glass w-full text-sm">
+            <option>${esc(card.set_name)} #${esc(card.collector_number)}</option>
+          </select>
+        </div>
+
 
         <!-- Acciones -->
         <div class="flex flex-col gap-2 mt-auto pt-3 border-t border-white/10">
@@ -413,19 +426,37 @@ async function openSFModal(card) {
     _loadRulings(card.id);
 
     document.getElementById('sf-add-collection')?.addEventListener('click', () => {
-        const folder = document.getElementById('sf-folder-select').value;
-        const foil = document.getElementById('sf-add-foil').checked;
-        _addToCollection(card, folder, foil);
+        const folder = document.getElementById('sf-folder-select')?.value;
+        const foil   = document.getElementById('sf-add-foil')?.checked ?? false;
+        if (!folder) { showToast(t('toast_no_folders'), 'warning'); return; }
+        _addToCollection(activeCard, folder, foil);   // ← activeCard
+    });
+
+    // ── Cargar versiones disponibles ──────────────────────────
+    loadPrintings(card, chosen => {
+        activeCard = chosen;
+
+        // Actualizar imagen
+        const imgEl = document.querySelector('#sf-modal .sf-modal-img, #sf-modal img');
+        const newImg = SF.getImageUri(chosen, 'normal');
+        if (imgEl && newImg) imgEl.src = newImg;
+
+        // Actualizar precios mostrados
+        const newPrices = SF.getPrices(chosen);
+        const eurEl = document.querySelector('#sf-modal .text-emerald-400');
+        const foilEl = document.querySelector('#sf-modal .text-violet-400');
+        if (eurEl) eurEl.textContent = newPrices.eur > 0 ? `${newPrices.eur.toFixed(2)} €` : t('price_na');
+        if (foilEl) foilEl.textContent = newPrices.eur_foil > 0 ? `✨ ${newPrices.eur_foil.toFixed(2)} €` : '';
     });
 
     document.getElementById('sf-add-deck')?.addEventListener('click', () => {
-        const idx = parseInt(document.getElementById('sf-deck-select').value, 10);
-        _addToDeck(card, idx);
+        const idx = parseInt(document.getElementById('sf-deck-select')?.value, 10);
+        _addToDeck(activeCard, idx);                   // ← activeCard
     });
 
     document.getElementById('sf-add-wishlist')?.addEventListener('click', () => {
-        addToWishlist(card);
-        showToast(`💭 ${card.name} ${t('added_to_wishlist')}`, 'success');
+        addToWishlist(activeCard);                     // ← activeCard
+        showToast(`💭 ${activeCard.name} ${t('added_to_wishlist')}`, 'success');
     });
 }
 
@@ -516,6 +547,40 @@ function _addToDeck(card, deckIndex) {
 
     saveToStorage();
     showToast(t('toast_added_deck', {name: card.name, deck: deck.name}), 'success');
+}
+
+// ── PRINTINGS ─────────────────────────────────────────────────
+async function loadPrintings(card, onSelect) {
+    const select = document.getElementById('sf-version-select');
+    if (!select) return;
+
+    select.innerHTML = `<option disabled>⏳ Cargando versiones…</option>`;
+
+    try {
+        const url = `https://api.scryfall.com/cards/search` +
+            `?q=!"${encodeURIComponent(card.name)}"&unique=prints&order=released`;
+        const res = await fetch(url);
+        const data = await res.json();
+        const prints = data.data ?? [];
+
+        select.innerHTML = prints.map(p => `
+      <option value="${esc(p.id)}"
+        ${p.id === card.id ? 'selected' : ''}>
+        ${esc(p.set_name)} #${esc(p.collector_number)}
+        · ${esc(p.lang?.toUpperCase() ?? 'EN')}
+        ${p.prices?.eur ? ` · ${parseFloat(p.prices.eur).toFixed(2)} €` : ''}
+        ${p.foil && !p.nonfoil ? ' ✨' : ''}
+      </option>`).join('');
+
+        // Al cambiar versión, actualizar carta activa
+        select.addEventListener('change', () => {
+            const chosen = prints.find(p => p.id === select.value);
+            if (chosen) onSelect(chosen);
+        });
+
+    } catch {
+        select.innerHTML = `<option>${card.set_name} #${card.collector_number}</option>`;
+    }
 }
 
 export function closeSFModal() {

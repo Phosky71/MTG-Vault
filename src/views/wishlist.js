@@ -138,11 +138,11 @@ function _buildCard(item) {
         ? `${item.currentPrice.toFixed(2)} €`
         : `<span class="text-slate-600">—</span>`}
           </div>
-          ${diff !== null ? `
-            <div class="wl-diff ${diff <= 0 ? 'text-emerald-400' : 'text-red-400'}">
-              ${diff <= 0 ? '▼' : '▲'} ${Math.abs(diff).toFixed(2)} €
-              (${pct > 0 ? '+' : ''}${pct.toFixed(0)}%)
-            </div>` : ''}
+          ${diff !== null && pct !== null ? `
+          <div class="wl-diff ${diff <= 0 ? 'text-emerald-400' : 'text-red-400'}">
+            ${diff <= 0 ? '▼' : '▲'} ${Math.abs(diff).toFixed(2)} €
+            (${pct > 0 ? '+' : ''}${pct.toFixed(0)}%)
+          </div>` : ''}
         </div>
 
         <!-- Cantidad -->

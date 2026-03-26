@@ -4,6 +4,8 @@ import {saveToStorage} from '../core/storage.js';
 import {showToast} from '../utils/ui.js';
 import * as SF from '../api/scryfall.js';
 import {cacheCards, cacheSearch, getCachedSearch} from '../core/db.js';
+import { exportDeckToCSV, exportDeckToTxt, exportDeckToJSON } from '../utils/export.js';
+
 
 
 const esc = s => String(s ?? '')
@@ -381,11 +383,22 @@ export function openDeckBuilder(deckIndex) {
         });
     });
 
-    // Botones header
+    ['builder-close-btn', 'builder-export-txt-btn', 'builder-export-csv-btn',
+        'builder-export-json-btn', 'builder-import-text-btn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const fresh = el.cloneNode(true);
+        el.replaceWith(fresh);
+    });
+
     document.getElementById('builder-close-btn')
-        .addEventListener('click', closeDeckBuilder);
-    document.getElementById('builder-export-btn')
-        .addEventListener('click', exportDeckText);
+        ?.addEventListener('click', closeDeckBuilder);
+    document.getElementById('builder-export-txt-btn')
+        ?.addEventListener('click', exportDeckText);           // copia al portapapeles
+    document.getElementById('builder-export-csv-btn')
+        ?.addEventListener('click', () => exportDeckToCSV(_deck));
+    document.getElementById('builder-export-json-btn')
+        ?.addEventListener('click', () => exportDeckToJSON(_deck));
     document.getElementById('builder-import-text-btn')
         ?.addEventListener('click', openImportTextModal);
 
@@ -947,12 +960,14 @@ function validateDeck() {
     return {valid: errors.length === 0, errors};
 }
 
-// ── EXPORTAR LISTA DE TEXTO ───────────────────────────────────
+// ── COPIAR LISTA AL PORTAPAPELES (MTGO / Arena) ───────────────
 export function exportDeckText() {
     const lines = [];
 
     if (_deck.commander) {
-        lines.push('Commander', `1 ${_deck.commander.name}`, '');
+        lines.push('Commander');
+        lines.push(`1 ${_deck.commander.name}`);
+        lines.push('');
     }
 
     const groups = _groupCards(_deck.mainboard ?? []);
@@ -966,10 +981,25 @@ export function exportDeckText() {
 
     if (_deck.sideboard?.length) {
         lines.push('Sideboard');
-        _deck.sideboard.forEach(c => lines.push(`${c.quantity || 1} ${c.name}`));
+        _deck.sideboard
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .forEach(c => lines.push(`${c.quantity || 1} ${c.name}`));
+        lines.push('');
     }
 
+    const mainCount = (_deck.mainboard ?? []).reduce((s, c) => s + (c.quantity || 1), 0);
+    const sideCount = (_deck.sideboard ?? []).reduce((s, c) => s + (c.quantity || 1), 0);
+    const totalVal  = [
+        ...(_deck.mainboard ?? []),
+        ...(_deck.sideboard ?? []),
+        ...(_deck.commander ? [_deck.commander] : []),
+    ].reduce((s, c) => s + (c.price || 0) * (c.quantity || 1), 0);
+
+    lines.push(`// ${_deck.name}`);
+    lines.push(`// Main: ${mainCount} · Side: ${sideCount} · Valor: ${totalVal.toFixed(2)} €`);
+
     const text = lines.join('\n');
+
     navigator.clipboard?.writeText(text).then(
         () => showToast(t('toast_deck_copied'), 'success'),
         () => _fallbackCopy(text)
@@ -978,7 +1008,7 @@ export function exportDeckText() {
 
 function _fallbackCopy(text) {
     const ta = Object.assign(document.createElement('textarea'),
-        {value: text, style: 'position:fixed;opacity:0'});
+        { value: text, style: 'position:fixed;opacity:0' });
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
