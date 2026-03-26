@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
+    <title>MTG Vault</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: { 'slate-950': '#0f172a' }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="css/custom.css">
+</head>
+
+<body class="bg-[#0f172a] text-white min-h-screen font-sans antialiased pb-16 bg-gradient">
+
+<!-- Toast Container -->
+<div id="toast-container" class="fixed bottom-5 right-5 flex flex-col gap-2 z-[900] pointer-events-none"></div>
+
+<!-- ════════════════ HEADER ════════════════ -->
+<header class="glass-header sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3 flex-wrap">
+
+        <div class="flex-shrink-0">
+            <h1 class="font-extrabold text-xl tracking-tight">MTG<span class="text-sky-400">Vault</span></h1>
+        </div>
+
+        <nav class="flex gap-1 flex-1 flex-wrap" id="main-nav">
+            <button class="nav-btn active" data-target="view-collection" data-i18n="nav_collection">Colección</button>
+            <button class="nav-btn" data-target="view-decks" data-i18n="nav_decks">Mazos</button>
+            <button class="nav-btn" data-target="view-dashboard" data-i18n="nav_dashboard">Dashboard</button>
+        </nav>
+
+        <div class="flex items-center gap-3 ml-auto flex-shrink-0">
+            <span id="header-total-value" class="text-emerald-400 font-bold text-sm tabular-nums">0.00 €</span>
+            <button id="lang-toggle" class="px-3 py-1.5 rounded-lg text-xs font-bold text-sky-400 border border-sky-400/30 bg-sky-400/10 hover:bg-sky-400/20 transition-colors whitespace-nowrap">
+                🌐 <span id="lang-label">ES</span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- ════════════════ MAIN ════════════════ -->
+<main class="max-w-7xl mx-auto px-4 sm:px-6 mt-6">
+
+    <!-- ── COLECCIÓN ── -->
+    <section id="view-collection" class="view-section">
+
+        <!-- Filtros -->
+        <div class="flex flex-wrap gap-3 mb-6">
+            <input type="text" id="search-input"
+                   class="input-glass flex-1 min-w-[180px]"
+                   data-i18n-placeholder="search_placeholder"
+                   placeholder="Buscar cartas...">
+            <select id="sort-filter" class="input-glass w-auto">
+                <option value=""       data-i18n="sort_default">Ordenar...</option>
+                <option value="price-desc" data-i18n="sort_price_desc">Precio (Mayor a Menor)</option>
+                <option value="price-asc"  data-i18n="sort_price_asc">Precio (Menor a Mayor)</option>
+                <option value="name-asc"   data-i18n="sort_name_asc">Nombre (A-Z)</option>
+            </select>
+            <select id="color-filter" class="input-glass w-auto">
+                <option value="" data-i18n="color_all">Todos los colores</option>
+                <option value="W" data-i18n="color_white">Blanco</option>
+                <option value="U" data-i18n="color_blue">Azul</option>
+                <option value="B" data-i18n="color_black">Negro</option>
+                <option value="R" data-i18n="color_red">Rojo</option>
+                <option value="G" data-i18n="color_green">Verde</option>
+                <option value="C" data-i18n="color_colorless">Incoloro / Tierras</option>
+            </select>
+        </div>
+
+        <!-- Layout Sidebar + Grid -->
+        <div class="flex flex-col md:flex-row gap-0 items-start">
+
+            <!-- Sidebar Carpetas -->
+            <aside id="folder-sidebar"
+                   class="w-full md:w-52 flex-shrink-0
+                 border-b md:border-b-0 md:border-r border-white/10
+                 pb-4 md:pb-0 md:pr-4 mb-5 md:mb-0 md:mr-5
+                 md:sticky md:top-[72px] md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
+
+                <div class="flex justify-between items-center mb-3 pb-3 border-b border-white/10">
+                    <h3 class="text-[11px] font-semibold uppercase tracking-widest text-slate-400" data-i18n="folders_title">Carpetas</h3>
+                    <button id="btn-new-folder"
+                            class="w-7 h-7 flex items-center justify-center rounded-md
+                     bg-sky-400/10 text-sky-400 border border-sky-400/30
+                     hover:bg-sky-400/25 transition-colors text-base leading-none font-bold"
+                            title="+">+</button>
+                </div>
+
+                <ul class="flex flex-row flex-wrap gap-1 md:flex-col md:flex-nowrap md:gap-0.5" id="folder-list">
+                    <li class="folder-nav-item active" data-folder="">
+                        <span>📚</span>
+                        <span class="folder-nav-name" data-i18n="folder_all">Todas</span>
+                        <span class="folder-nav-count" id="folder-count-all">0</span>
+                    </li>
+                </ul>
+            </aside>
+
+            <!-- Grid -->
+            <div class="flex-1 min-w-0">
+                <input type="file" id="csv-upload" accept=".csv,.txt" class="hidden">
+                <div id="card-grid"
+                     class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                </div>
+                <div class="flex flex-wrap gap-x-6 gap-y-1 mt-4 text-sm text-slate-400">
+                    <span><span data-i18n="total_cards">Total de Cartas</span>: <strong id="total-cards" class="text-white">0</strong></span>
+                    <span><span data-i18n="total_value">Valor Total</span>: <strong id="total-value" class="text-emerald-400">0.00 €</strong></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── MAZOS ── -->
+    <section id="view-decks" class="view-section hidden">
+
+        <form id="deck-import-form" class="flex flex-wrap gap-3 mb-3">
+            <input type="url" id="deck-url-input" class="input-glass flex-[2] min-w-[200px]"
+                   data-i18n-placeholder="deck_url_placeholder" placeholder="URL Moxfield, Archidekt...">
+            <input type="text" id="deck-name-input" class="input-glass flex-1 min-w-[150px]"
+                   data-i18n-placeholder="deck_name_placeholder" placeholder="Nombre del mazo">
+            <select id="deck-format-select" class="input-glass w-auto">
+                <option value=""          data-i18n="format_select">Formato...</option>
+                <option value="Standard">Standard</option>
+                <option value="Pioneer">Pioneer</option>
+                <option value="Modern">Modern</option>
+                <option value="Legacy">Legacy</option>
+                <option value="Commander">Commander</option>
+                <option value="Pauper">Pauper</option>
+                <option value="Casual"   data-i18n="format_casual">Otro / Casual</option>
+            </select>
+            <button type="submit" class="btn-primary" data-i18n="btn_import_deck">Importar Mazo</button>
+        </form>
+
+        <div class="flex gap-3 mb-6">
+            <select id="format-filter" class="input-glass w-auto">
+                <option value=""          data-i18n="format_all">Todos los formatos</option>
+                <option value="Standard">Standard</option>
+                <option value="Pioneer">Pioneer</option>
+                <option value="Modern">Modern</option>
+                <option value="Legacy">Legacy</option>
+                <option value="Commander">Commander</option>
+                <option value="Pauper">Pauper</option>
+                <option value="Casual"   data-i18n="format_casual">Otro / Casual</option>
+            </select>
+        </div>
+
+        <div id="deck-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+    </section>
+
+    <!-- ── DASHBOARD ── -->
+    <section id="view-dashboard" class="view-section hidden">
+
+        <h2 class="text-2xl font-extrabold mb-6" data-i18n="dashboard_title">Dashboard de Colección</h2>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <div class="glass-card p-5 text-center stat-card-hover">
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2" data-i18n="total_cards">Total de Cartas</p>
+                <p id="dash-total-cards" class="text-3xl font-extrabold">0</p>
+            </div>
+            <div class="glass-card p-5 text-center stat-card-hover">
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2" data-i18n="unique_cards">Cartas Únicas</p>
+                <p id="dash-unique-cards" class="text-3xl font-extrabold">0</p>
+            </div>
+            <div class="glass-card p-5 text-center stat-card-hover">
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2" data-i18n="total_value">Valor Total</p>
+                <p id="dash-total-value" class="text-3xl font-extrabold text-emerald-400 tabular-nums">0.00 €</p>
+            </div>
+            <div class="glass-card p-5 text-center stat-card-hover">
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2" data-i18n="nav_decks">Mazos</p>
+                <p id="dash-total-decks" class="text-3xl font-extrabold">0</p>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-bold mb-4" data-i18n="folders_breakdown">Desglose por Carpetas</h3>
+        <div id="folders-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+    </section>
+
+</main>
+
+<!-- ════════════════ MODAL CARTA ════════════════ -->
+<div id="card-modal"
+     class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[500] hidden items-center justify-center p-4"
+     role="dialog" aria-modal="true">
+    <div class="glass-card w-full max-w-xl relative max-h-[90vh] overflow-y-auto modal-anim">
+        <button id="modal-close"
+                class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full
+               bg-white/8 hover:bg-red-400/20 hover:text-red-400
+               transition-colors text-slate-400 text-sm">✕</button>
+        <div id="modal-body" class="p-6"></div>
+    </div>
+</div>
+
+<!-- ════════════════ FOOTER ════════════════ -->
+<footer class="mt-16 pt-6 border-t border-white/10 text-center text-slate-500 text-xs">
+    <div class="max-w-7xl mx-auto px-4">
+        <span data-i18n="footer_text">MTG Vault — Gestiona tu colección</span>
+        · <a href="https://www.cardmarket.com" target="_blank" rel="noopener"
+             class="text-sky-400 hover:underline">Cardmarket</a>
+    </div>
+</footer>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
