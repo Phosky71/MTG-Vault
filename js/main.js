@@ -4,10 +4,13 @@ import { loadFromStorage, saveToStorage } from './storage.js';
 import { parseCSV }         from './parser.js';
 import { showToast, closeModal } from './ui.js';
 import {
-    renderFolderSidebar, handleFilters, updateHeaderValue, createFolder
+    renderFolderSidebar, handleFilters,
+    updateHeaderValue, createFolder
 } from './collection.js';
 import { renderDecks, addDeck } from './decks.js';
-import { updateDashboard }  from './dashboard.js';
+import { updateDashboard }      from './dashboard.js';
+import { initSearchView, closeSFModal } from './search-view.js';
+import { initDB }               from './db.js';
 
 // ── NAV TABS ──────────────────────────────────────────────────
 document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -31,8 +34,6 @@ document.getElementById('lang-toggle').addEventListener('click', () => {
     handleFilters();
     renderDecks();
     showToast(next === 'en' ? '🌐 English' : '🌐 Español', 'info');
-    // Actualizar currentLang en i18n (re-import no rebinda la primitiva exportada)
-    // El módulo i18n actualiza la variable internamente; el cambio se refleja en t()
 });
 
 // ── NUEVA CARPETA ─────────────────────────────────────────────
@@ -61,7 +62,7 @@ document.getElementById('csv-upload').addEventListener('change', e => {
     reader.readAsText(file, 'UTF-8');
 });
 
-// ── FILTROS ───────────────────────────────────────────────────
+// ── FILTROS COLECCIÓN ─────────────────────────────────────────
 document.getElementById('search-input').addEventListener('input', handleFilters);
 document.getElementById('sort-filter').addEventListener('change', handleFilters);
 document.getElementById('color-filter').addEventListener('change', handleFilters);
@@ -76,19 +77,33 @@ document.getElementById('deck-import-form').addEventListener('submit', e => {
 });
 document.getElementById('format-filter').addEventListener('change', renderDecks);
 
-// ── MODAL ─────────────────────────────────────────────────────
+// ── MODAL COLECCIÓN ────────────────────────────────────────────
 document.getElementById('modal-close').addEventListener('click', closeModal);
 document.getElementById('card-modal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ── MODAL SCRYFALL ─────────────────────────────────────────────
+document.getElementById('sf-modal-close').addEventListener('click', closeSFModal);
+document.getElementById('sf-modal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeSFModal();
+});
+
+// ── ESC cierra cualquier modal abierto ─────────────────────────
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    closeModal();
+    closeSFModal();
+});
 
 // ── INIT ──────────────────────────────────────────────────────
-(function init() {
+(async function init() {
+    await initDB();          // IndexedDB lista antes que todo
     loadFromStorage();
     applyTranslations();
     renderFolderSidebar();
     handleFilters();
     renderDecks();
     updateHeaderValue();
+    initSearchView();        // Activa listeners del buscador Scryfall
 })();

@@ -15,8 +15,8 @@
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: { 'slate-950': '#0f172a' }
+                    fontFamily: {sans: ['Inter', 'sans-serif']},
+                    colors: {'slate-950': '#0f172a'}
                 }
             }
         }
@@ -41,11 +41,13 @@
             <button class="nav-btn active" data-target="view-collection" data-i18n="nav_collection">Colección</button>
             <button class="nav-btn" data-target="view-decks" data-i18n="nav_decks">Mazos</button>
             <button class="nav-btn" data-target="view-dashboard" data-i18n="nav_dashboard">Dashboard</button>
+            <button class="nav-btn" data-target="view-search" data-i18n="nav_search">Buscar</button>
         </nav>
 
         <div class="flex items-center gap-3 ml-auto flex-shrink-0">
             <span id="header-total-value" class="text-emerald-400 font-bold text-sm tabular-nums">0.00 €</span>
-            <button id="lang-toggle" class="px-3 py-1.5 rounded-lg text-xs font-bold text-sky-400 border border-sky-400/30 bg-sky-400/10 hover:bg-sky-400/20 transition-colors whitespace-nowrap">
+            <button id="lang-toggle"
+                    class="px-3 py-1.5 rounded-lg text-xs font-bold text-sky-400 border border-sky-400/30 bg-sky-400/10 hover:bg-sky-400/20 transition-colors whitespace-nowrap">
                 🌐 <span id="lang-label">ES</span>
             </button>
         </div>
@@ -65,10 +67,10 @@
                    data-i18n-placeholder="search_placeholder"
                    placeholder="Buscar cartas...">
             <select id="sort-filter" class="input-glass w-auto">
-                <option value=""       data-i18n="sort_default">Ordenar...</option>
+                <option value="" data-i18n="sort_default">Ordenar...</option>
                 <option value="price-desc" data-i18n="sort_price_desc">Precio (Mayor a Menor)</option>
-                <option value="price-asc"  data-i18n="sort_price_asc">Precio (Menor a Mayor)</option>
-                <option value="name-asc"   data-i18n="sort_name_asc">Nombre (A-Z)</option>
+                <option value="price-asc" data-i18n="sort_price_asc">Precio (Menor a Mayor)</option>
+                <option value="name-asc" data-i18n="sort_name_asc">Nombre (A-Z)</option>
             </select>
             <select id="color-filter" class="input-glass w-auto">
                 <option value="" data-i18n="color_all">Todos los colores</option>
@@ -92,12 +94,14 @@
                  md:sticky md:top-[72px] md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
 
                 <div class="flex justify-between items-center mb-3 pb-3 border-b border-white/10">
-                    <h3 class="text-[11px] font-semibold uppercase tracking-widest text-slate-400" data-i18n="folders_title">Carpetas</h3>
+                    <h3 class="text-[11px] font-semibold uppercase tracking-widest text-slate-400"
+                        data-i18n="folders_title">Carpetas</h3>
                     <button id="btn-new-folder"
                             class="w-7 h-7 flex items-center justify-center rounded-md
                      bg-sky-400/10 text-sky-400 border border-sky-400/30
                      hover:bg-sky-400/25 transition-colors text-base leading-none font-bold"
-                            title="+">+</button>
+                            title="+">+
+                    </button>
                 </div>
 
                 <ul class="flex flex-row flex-wrap gap-1 md:flex-col md:flex-nowrap md:gap-0.5" id="folder-list">
@@ -116,8 +120,10 @@
                      class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 </div>
                 <div class="flex flex-wrap gap-x-6 gap-y-1 mt-4 text-sm text-slate-400">
-                    <span><span data-i18n="total_cards">Total de Cartas</span>: <strong id="total-cards" class="text-white">0</strong></span>
-                    <span><span data-i18n="total_value">Valor Total</span>: <strong id="total-value" class="text-emerald-400">0.00 €</strong></span>
+                    <span><span data-i18n="total_cards">Total de Cartas</span>: <strong id="total-cards"
+                                                                                        class="text-white">0</strong></span>
+                    <span><span data-i18n="total_value">Valor Total</span>: <strong id="total-value"
+                                                                                    class="text-emerald-400">0.00 €</strong></span>
                 </div>
             </div>
         </div>
@@ -132,28 +138,28 @@
             <input type="text" id="deck-name-input" class="input-glass flex-1 min-w-[150px]"
                    data-i18n-placeholder="deck_name_placeholder" placeholder="Nombre del mazo">
             <select id="deck-format-select" class="input-glass w-auto">
-                <option value=""          data-i18n="format_select">Formato...</option>
+                <option value="" data-i18n="format_select">Formato...</option>
                 <option value="Standard">Standard</option>
                 <option value="Pioneer">Pioneer</option>
                 <option value="Modern">Modern</option>
                 <option value="Legacy">Legacy</option>
                 <option value="Commander">Commander</option>
                 <option value="Pauper">Pauper</option>
-                <option value="Casual"   data-i18n="format_casual">Otro / Casual</option>
+                <option value="Casual" data-i18n="format_casual">Otro / Casual</option>
             </select>
             <button type="submit" class="btn-primary" data-i18n="btn_import_deck">Importar Mazo</button>
         </form>
 
         <div class="flex gap-3 mb-6">
             <select id="format-filter" class="input-glass w-auto">
-                <option value=""          data-i18n="format_all">Todos los formatos</option>
+                <option value="" data-i18n="format_all">Todos los formatos</option>
                 <option value="Standard">Standard</option>
                 <option value="Pioneer">Pioneer</option>
                 <option value="Modern">Modern</option>
                 <option value="Legacy">Legacy</option>
                 <option value="Commander">Commander</option>
                 <option value="Pauper">Pauper</option>
-                <option value="Casual"   data-i18n="format_casual">Otro / Casual</option>
+                <option value="Casual" data-i18n="format_casual">Otro / Casual</option>
             </select>
         </div>
 
@@ -167,19 +173,23 @@
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
             <div class="glass-card p-5 text-center stat-card-hover">
-                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2" data-i18n="total_cards">Total de Cartas</p>
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2"
+                   data-i18n="total_cards">Total de Cartas</p>
                 <p id="dash-total-cards" class="text-3xl font-extrabold">0</p>
             </div>
             <div class="glass-card p-5 text-center stat-card-hover">
-                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2" data-i18n="unique_cards">Cartas Únicas</p>
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2"
+                   data-i18n="unique_cards">Cartas Únicas</p>
                 <p id="dash-unique-cards" class="text-3xl font-extrabold">0</p>
             </div>
             <div class="glass-card p-5 text-center stat-card-hover">
-                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2" data-i18n="total_value">Valor Total</p>
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2"
+                   data-i18n="total_value">Valor Total</p>
                 <p id="dash-total-value" class="text-3xl font-extrabold text-emerald-400 tabular-nums">0.00 €</p>
             </div>
             <div class="glass-card p-5 text-center stat-card-hover">
-                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2" data-i18n="nav_decks">Mazos</p>
+                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2"
+                   data-i18n="nav_decks">Mazos</p>
                 <p id="dash-total-decks" class="text-3xl font-extrabold">0</p>
             </div>
         </div>
@@ -188,18 +198,97 @@
         <div id="folders-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
     </section>
 
-</main>
 
-<!-- ════════════════ MODAL CARTA ════════════════ -->
-<div id="card-modal"
-     class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[500] hidden items-center justify-center p-4"
-     role="dialog" aria-modal="true">
-    <div class="glass-card w-full max-w-xl relative max-h-[90vh] overflow-y-auto modal-anim">
-        <button id="modal-close"
-                class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full
+    <!-- ════════════════ MODAL CARTA ════════════════ -->
+    <div id="card-modal"
+         class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[500] hidden items-center justify-center p-4"
+         role="dialog" aria-modal="true">
+        <div class="glass-card w-full max-w-xl relative max-h-[90vh] overflow-y-auto modal-anim">
+            <button id="modal-close"
+                    class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full
                bg-white/8 hover:bg-red-400/20 hover:text-red-400
-               transition-colors text-slate-400 text-sm">✕</button>
-        <div id="modal-body" class="p-6"></div>
+               transition-colors text-slate-400 text-sm">✕
+            </button>
+            <div id="modal-body" class="p-6"></div>
+        </div>
+    </div>
+
+    <!-- ════════════════ CARGAR CARTA ════════════════ -->
+    <section id="view-search" class="view-section hidden">
+
+        <div class="flex flex-col gap-4 mb-6">
+            <div class="relative">
+                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base pointer-events-none">🔍</span>
+                <input type="text" id="sf-search-input"
+                       class="input-glass w-full pl-10 pr-4 text-base py-3"
+                       data-i18n-placeholder="search_scryfall_placeholder"
+                       placeholder="Busca cartas: Mox Opal · t:artifact · o:flying f:modern...">
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Botones de color MTG -->
+                <div class="flex gap-1.5 items-center flex-wrap">
+                    <span class="text-xs text-slate-500">Color:</span>
+                    <button class="sf-color-btn" data-color="W" title="Blanco (White)">☀️</button>
+                    <button class="sf-color-btn" data-color="U" title="Azul (Blue)">💧</button>
+                    <button class="sf-color-btn" data-color="B" title="Negro (Black)">💀</button>
+                    <button class="sf-color-btn" data-color="R" title="Rojo (Red)">🔥</button>
+                    <button class="sf-color-btn" data-color="G" title="Verde (Green)">🌲</button>
+                    <button class="sf-color-btn" data-color="C" title="Incoloro (Colorless)">💎</button>
+                </div>
+
+                <!-- Tipo de carta -->
+                <input type="text" id="sf-type-input"
+                       class="input-glass w-32 text-sm"
+                       data-i18n-placeholder="type_placeholder"
+                       placeholder="Tipo...">
+
+                <!-- Formato legal -->
+                <select id="sf-format-select" class="input-glass w-auto text-sm">
+                    <option value="" data-i18n="format_all">Todos los formatos</option>
+                    <option value="standard">Standard</option>
+                    <option value="pioneer">Pioneer</option>
+                    <option value="modern">Modern</option>
+                    <option value="legacy">Legacy</option>
+                    <option value="commander">Commander</option>
+                    <option value="pauper">Pauper</option>
+                    <option value="vintage">Vintage</option>
+                    <option value="historic">Historic</option>
+                </select>
+
+                <span id="sf-results-info" class="text-xs text-slate-500 ml-auto tabular-nums"></span>
+            </div>
+        </div>
+
+        <!-- Grid de resultados -->
+        <div id="sf-results-grid"
+             class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        </div>
+
+        <!-- Botón cargar más -->
+        <div class="flex justify-center mt-8 mb-4">
+            <button id="sf-load-more"
+                    class="hidden btn-primary px-10 py-2.5 text-sm"
+                    data-i18n="load_more">
+                Cargar más
+            </button>
+        </div>
+
+    </section>
+
+</main><!-- FIN </main> -->
+
+<!-- ════════════════ MODAL SCRYFALL ════════════════ -->
+<div id="sf-modal"
+     class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[600] hidden items-center justify-center p-4"
+     role="dialog" aria-modal="true" aria-label="Detalle de carta">
+    <div class="glass-card w-full max-w-2xl relative max-h-[92vh] overflow-y-auto modal-anim">
+        <button id="sf-modal-close"
+                class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full
+             bg-white/8 hover:bg-red-400/20 hover:text-red-400
+             transition-colors text-slate-400 text-sm z-10">✕
+        </button>
+        <div id="sf-modal-body" class="p-6"></div>
     </div>
 </div>
 
@@ -209,6 +298,8 @@
         <span data-i18n="footer_text">MTG Vault — Gestiona tu colección</span>
         · <a href="https://www.cardmarket.com" target="_blank" rel="noopener"
              class="text-sky-400 hover:underline">Cardmarket</a>
+        · <a href="https://scryfall.com" target="_blank" rel="noopener"
+             class="text-sky-400 hover:underline">Scryfall</a>
     </div>
 </footer>
 
