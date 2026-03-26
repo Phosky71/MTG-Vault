@@ -1,20 +1,27 @@
 name: macOS Build
 on:
   workflow_dispatch:  # Clic botón para correr
+
 jobs:
   build:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: 20
-    - uses: dtolnay/rust-toolchain@stable
-    - name: Instalar dependencias
-      run: npm ci
-    - name: Build frontend
-      run: npm run build
-    - name: Build Tauri
-      uses: tauri-apps/tauri-action@v0
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Build frontend
+        run: npm run build
+      - name: Build Tauri
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Subir artifact macOS
+        uses: actions/upload-artifact@v4
+        with:
+          name: mtg-vault-macos
+          path: |
+            src-tauri/target/release/bundle/macos/*
