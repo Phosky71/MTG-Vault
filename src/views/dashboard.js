@@ -1,7 +1,7 @@
 import { Chart, registerables } from 'chart.js';
 import { state }                from '../core/state.js';
 import { t }                    from '../i18n/index.js';
-import { savePriceSnapshot, getPriceHistory } from '../core/db.js';
+import { savePriceSnapshot, getPriceHistory } from '../core/storage.js';
 
 // ── Chart.js setup ────────────────────────────────────────────
 Chart.register(...registerables);

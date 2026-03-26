@@ -2,5 +2,9 @@
 node_modules
 dev-dist
 manifest.webmanifest.js
-src-tauri
+src-tauri/gen
+src-tauri/icons
+src-tauri/target
+src-tauri/.gitignore
 MTG Vault
+dist

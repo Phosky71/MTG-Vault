@@ -1,29 +1,28 @@
-import {state} from './core/state.js';
-import {applyTranslations, currentLang, setLanguage, t} from './i18n/index.js';
-import {loadFromStorage, saveToStorage} from './core/storage.js';
-import {initDB} from './core/db.js';
-import {parseCSV} from './utils/parser.js';
-import {showToast} from './utils/ui.js';
+import { state } from './core/state.js';
+import { applyTranslations, currentLang, setLanguage, t } from './i18n/index.js';
+import { loadFromStorage, saveFolderCards } from './core/storage.js';
+import { parseCSV } from './utils/parser.js';
+import { showToast } from './utils/ui.js';
 import {
     closeCardModal,
     createFolder,
     handleFilters,
     renderFolderSidebar,
-    updateHeaderValue
+    updateHeaderValue,
 } from './views/collection.js';
-import {addDeck, createBlankDeckAndOpen, renderDecks} from './views/decks.js';
-import {updateDashboard} from './views/dashboard.js';
-import {closeSFModal, initSearchView} from './views/search.js';
-import {closeDeckBuilder} from './views/deckbuilder.js';
-import {initWishlist, renderWishlist} from './views/wishlist.js';
-import {restoreBackupIfNeeded, saveBackup, startAutoBackup,
-    downloadBackup, importBackupFromFile} from './core/backup.js';
-import {exportToCSV, exportToJSON} from './utils/export.js';
+import { addDeck, createBlankDeckAndOpen, renderDecks } from './views/decks.js';
+import { updateDashboard } from './views/dashboard.js';
+import { closeSFModal, initSearchView } from './views/search.js';
+import { closeDeckBuilder } from './views/deckbuilder.js';
+import { initWishlist, renderWishlist } from './views/wishlist.js';
+import { saveBackup, startAutoBackup, downloadBackup, importBackupFromFile } from './core/backup.js';
+import { exportToCSV, exportToJSON } from './utils/export.js';
 
+// ── EXPORT BUTTONS ────────────────────────────────────────────
 document.getElementById('btn-export-csv')?.addEventListener('click', () => exportToCSV());
 document.getElementById('btn-export-json')?.addEventListener('click', () => exportToJSON());
 
-// ── FLAG modo wishlist ────────────────────────────────────────
+// ── FLAG MODO WISHLIST ────────────────────────────────────────
 let _wishlistSearchMode = false;
 
 // ── NAV TABS ──────────────────────────────────────────────────
@@ -56,20 +55,21 @@ document.getElementById('lang-toggle').addEventListener('click', () => {
 document.getElementById('btn-new-folder').addEventListener('click', createFolder);
 
 // ── CSV IMPORT ────────────────────────────────────────────────
-document.getElementById('csv-upload').addEventListener('change', e => {
+document.getElementById('csv-upload').addEventListener('change', async e => {
     const file = e.target.files[0];
     if (!file) return;
 
     const folder = state.pendingImportFolder;
     state.pendingImportFolder = null;
     e.target.value = '';
+
     if (!folder) {
         showToast('Sin carpeta destino', 'warning');
         return;
     }
 
     const reader = new FileReader();
-    reader.onload = ev => {
+    reader.onload = async ev => {
         const cards = parseCSV(ev.target.result);
         if (!cards.length) {
             showToast(t('toast_import_empty'), 'warning');
@@ -88,10 +88,17 @@ document.getElementById('csv-upload').addEventListener('change', e => {
         );
 
         state.folders[folder] = [...(state.folders[folder] || []), ...cards];
-        saveToStorage();
+        try {
+            await saveFolderCards(folder, state.folders[folder]);
+        } catch (err) {
+            console.error('[MTGVault] Error guardando CSV en SQLite:', err);
+            showToast('❌ Error al guardar las cartas', 'error');
+            return;
+        }
+
         renderFolderSidebar();
         handleFilters();
-        showToast(t('toast_import_success', {n: cards.length, folder}), 'success');
+        showToast(t('toast_import_success', { n: cards.length, folder }), 'success');
     };
     reader.onerror = () => showToast(t('toast_import_error'), 'error');
     reader.readAsText(file, 'UTF-8');
@@ -103,28 +110,28 @@ document.getElementById('sort-filter').addEventListener('change', handleFilters)
 document.getElementById('color-filter').addEventListener('change', handleFilters);
 
 // ── MAZOS ─────────────────────────────────────────────────────
-document.getElementById('deck-import-form').addEventListener('submit', e => {
+// addDeck es ahora async — el form handler también lo es
+document.getElementById('deck-import-form').addEventListener('submit', async e => {
     e.preventDefault();
     const name   = document.getElementById('deck-name-input').value.trim();
     const format = document.getElementById('deck-format-select').value;
     const url    = document.getElementById('deck-url-input')?.value.trim() ?? '';
 
-    const idx = addDeck(url, name, format);
+    const idx = await addDeck(url, name, format);
     if (idx >= 0) {
         e.target.reset();
-        import('./views/deckbuilder.js').then(({openDeckBuilder}) => openDeckBuilder(idx));
+        import('./views/deckbuilder.js').then(({ openDeckBuilder }) => openDeckBuilder(idx));
     }
 });
 
 document.getElementById('format-filter').addEventListener('change', renderDecks);
 document.getElementById('btn-new-deck')?.addEventListener('click', createBlankDeckAndOpen);
 
-// ── BACKUP — botones header ───────────────────────────────────
+// ── BACKUP ────────────────────────────────────────────────────
 document.getElementById('btn-backup-download')?.addEventListener('click', downloadBackup);
 
 document.getElementById('btn-backup-import')?.addEventListener('click', () => {
-    const input = Object.assign(document.createElement('input'),
-        { type: 'file', accept: '.json' });
+    const input = Object.assign(document.createElement('input'), { type: 'file', accept: '.json' });
     input.onchange = async e => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -156,11 +163,9 @@ window.addEventListener('wl:open-search', () => {
     showToast('💭 Busca una carta y pulsa 💭 para añadirla a la wishlist', 'info', 4000);
 });
 
-window.addEventListener('wl:close-search', () => {
-    _wishlistSearchMode = false;
-});
+window.addEventListener('wl:close-search', () => { _wishlistSearchMode = false; });
 
-export function isWishlistSearchMode()  { return _wishlistSearchMode; }
+export function isWishlistSearchMode()    { return _wishlistSearchMode; }
 export function clearWishlistSearchMode() { _wishlistSearchMode = false; }
 
 // ── MODALES ───────────────────────────────────────────────────
@@ -190,7 +195,7 @@ window.addEventListener('beforeinstallprompt', e => {
 document.getElementById('pwa-toast-install')?.addEventListener('click', async () => {
     if (!_deferredInstallPrompt) return;
     _deferredInstallPrompt.prompt();
-    const {outcome} = await _deferredInstallPrompt.userChoice;
+    const { outcome } = await _deferredInstallPrompt.userChoice;
     _deferredInstallPrompt = null;
     pwaToast?.classList.remove('show');
     if (outcome === 'accepted') showToast('✅ MTG Vault instalada como app', 'success');
@@ -206,7 +211,7 @@ window.addEventListener('appinstalled', () => {
 });
 
 // ── SERVICE WORKER ────────────────────────────────────────────
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
     navigator.serviceWorker.register('/service-worker.js')
         .then(() => console.log('[SW] Registrado'))
         .catch(e => console.warn('[SW] Error:', e));
@@ -214,21 +219,20 @@ if ('serviceWorker' in navigator) {
 
 // ── INIT ──────────────────────────────────────────────────────
 (async function init() {
-    await initDB();
+    // 1. Migración one-shot desde localStorage/IndexedDB → SQLite
+    const { migrateToSQLite } = await import('./core/migrate.js');
+    const wasMigrated = await migrateToSQLite();
+    if (wasMigrated) showToast('✅ Datos migrados a base de datos local', 'success');
 
-    // Restaurar backup si localStorage está vacío
-    const restored = restoreBackupIfNeeded();
-    if (restored) {
-        showToast('♻️ Datos restaurados desde backup automático', 'info');
-    }
+    // 2. Cargar estado desde SQLite
+    await loadFromStorage();
 
-    // Arrancar sistema de backup
+    // 3. Backup JSON (capa de seguridad extra)
     saveBackup();
     startAutoBackup();
-
-    // Guardar backup al cerrar/recargar
     window.addEventListener('beforeunload', () => saveBackup());
 
+    // 4. Render inicial
     applyTranslations();
     renderFolderSidebar();
     handleFilters();

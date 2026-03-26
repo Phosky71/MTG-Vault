@@ -1,74 +1,19 @@
-import {state} from '../core/state.js';
-import {t} from '../i18n/index.js';
-import {saveToStorage} from '../core/storage.js';
-import {showToast} from '../utils/ui.js';
-import {exportDeckToTxt, exportToCSV, exportToJSON} from '../utils/export.js';
-import {initDB} from "../core/db.js";
+import { state } from '../core/state.js';
+import { t } from '../i18n/index.js';
+import { saveToStorage } from '../core/storage.js';
 import {
-    downloadBackup,
-    importBackupFromFile,
-    restoreBackupIfNeeded,
-    saveBackup,
-    startAutoBackup
-} from "../core/backup.js";
-import {renderDecks} from "./decks.js";
-import {updateDashboard} from "./dashboard.js";
+    ensureFolder,
+    renameFolderInDb,
+    deleteFolderFromDb,
+    updateCollectionCard,
+    deleteCollectionCard,
+} from '../core/storage.js';
+import { showToast } from '../utils/ui.js';
+import { exportDeckToTxt, exportToCSV, exportToJSON } from '../utils/export.js';
 
 const esc = s => String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-document.addEventListener('DOMContentLoaded', async () => {
-    await initDB();
-
-    // ── Restaurar datos si localStorage está vacío ────────────
-    const restored = restoreBackupIfNeeded();
-    if (restored) {
-        showToast('♻️ Datos restaurados desde backup automático', 'info');
-    }
-
-    // ── Guardar backup inicial y arrancar autoguardado ────────
-    saveBackup();
-    startAutoBackup();
-
-    // ... resto del init que ya tenías ...
-    renderFolderSidebar();
-    handleFilters();
-    renderDecks();
-    // etc.
-
-    // ── Botón backup manual (si existe en el HTML) ────────────
-    document.getElementById('btn-backup-download')
-        ?.addEventListener('click', downloadBackup);
-
-    document.getElementById('btn-backup-import')
-        ?.addEventListener('click', () => {
-            const input = Object.assign(document.createElement('input'),
-                {type: 'file', accept: '.json'});
-            input.onchange = async e => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                try {
-                    const ok = await importBackupFromFile(file);
-                    if (ok) {
-                        showToast('✅ Backup restaurado correctamente', 'success');
-                        renderFolderSidebar();
-                        handleFilters();
-                        renderDecks();
-                        updateDashboard();
-                    }
-                } catch {
-                    showToast('❌ Error al leer el fichero de backup', 'error');
-                }
-            };
-            input.click();
-        });
-
-    // ── Guardar backup al cerrar/recargar la pestaña ──────────
-    window.addEventListener('beforeunload', () => {
-        saveBackup();
-    });
-});
 
 // ── HELPERS ───────────────────────────────────────────────────
 export function getAllCards() {
@@ -98,11 +43,9 @@ export function updateHeaderValue() {
 export function renderFolderSidebar() {
     const list = document.getElementById('folder-list');
     Array.from(list.querySelectorAll('.folder-nav-item[data-folder]'))
-        .forEach(el => {
-            if (el.dataset.folder !== '') el.remove();
-        });
+        .forEach(el => { if (el.dataset.folder !== '') el.remove(); });
 
-    const allCount = getAllCards().reduce((s, c) => s + (c.quantity || 1), 0);
+    const allCount   = getAllCards().reduce((s, c) => s + (c.quantity || 1), 0);
     const allCountEl = document.getElementById('folder-count-all');
     if (allCountEl) allCountEl.textContent = allCount;
 
@@ -120,8 +63,8 @@ export function renderFolderSidebar() {
 
     Object.keys(state.folders).sort().forEach(name => {
         const qty = state.folders[name].reduce((s, c) => s + (c.quantity || 1), 0);
-        const li = document.createElement('li');
-        li.className = `folder-nav-item${state.activeFolderFilter === name ? ' active' : ''}`;
+        const li  = document.createElement('li');
+        li.className  = `folder-nav-item${state.activeFolderFilter === name ? ' active' : ''}`;
         li.dataset.folder = name;
         li.innerHTML = `
             <span class="folder-nav-name">📁 ${esc(name)}</span>
@@ -144,22 +87,10 @@ export function renderFolderSidebar() {
             state.pendingImportFolder = name;
             document.getElementById('csv-upload').click();
         };
-        li.querySelector('.export-csv-btn').onclick = e => {
-            e.stopPropagation();
-            exportToCSV(name);
-        };
-        li.querySelector('.export-txt-btn').onclick = e => {
-            e.stopPropagation();
-            exportDeckToTxt(name);
-        };
-        li.querySelector('.rename-btn').onclick = e => {
-            e.stopPropagation();
-            renameFolder(name);
-        };
-        li.querySelector('.delete-btn').onclick = e => {
-            e.stopPropagation();
-            deleteFolder(name);
-        };
+        li.querySelector('.export-csv-btn').onclick = e => { e.stopPropagation(); exportToCSV(name); };
+        li.querySelector('.export-txt-btn').onclick = e => { e.stopPropagation(); exportDeckToTxt(name); };
+        li.querySelector('.rename-btn').onclick     = e => { e.stopPropagation(); renameFolder(name); };
+        li.querySelector('.delete-btn').onclick     = e => { e.stopPropagation(); deleteFolder(name); };
         list.appendChild(li);
     });
 
@@ -173,7 +104,6 @@ function _bindExportButtons() {
         'btn-export-txt': () => exportDeckToTxt(state.activeFolderFilter || null),
         'btn-export-json': () => exportToJSON(),
     };
-
     Object.entries(buttons).forEach(([id, handler]) => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -184,7 +114,7 @@ function _bindExportButtons() {
 }
 
 // ── CRUD CARPETAS ─────────────────────────────────────────────
-export function createFolder() {
+export async function createFolder() {
     const name = prompt(t('new_folder_prompt'));
     if (!name?.trim()) return;
     const trimmed = name.trim();
@@ -193,42 +123,61 @@ export function createFolder() {
         return;
     }
     state.folders[trimmed] = [];
-    saveToStorage();
+    try {
+        await ensureFolder(trimmed);
+    } catch (err) {
+        console.error('[MTGVault] Error creando carpeta:', err);
+        showToast('❌ Error al crear la carpeta', 'error');
+        delete state.folders[trimmed];
+        return;
+    }
     renderFolderSidebar();
-    showToast(t('toast_folder_created', {name: trimmed}), 'success');
+    showToast(t('toast_folder_created', { name: trimmed }), 'success');
 }
 
-function deleteFolder(name) {
-    if (!confirm(t('confirm_delete_folder', {name}))) return;
+async function deleteFolder(name) {
+    if (!confirm(t('confirm_delete_folder', { name }))) return;
+    try {
+        await deleteFolderFromDb(name);
+    } catch (err) {
+        console.error('[MTGVault] Error eliminando carpeta:', err);
+        showToast('❌ Error al eliminar la carpeta', 'error');
+        return;
+    }
     delete state.folders[name];
     if (state.activeFolderFilter === name) state.activeFolderFilter = '';
-    saveToStorage();
     renderFolderSidebar();
     handleFilters();
-    showToast(t('toast_folder_deleted', {name}), 'info');
+    showToast(t('toast_folder_deleted', { name }), 'info');
 }
 
-function renameFolder(oldName) {
-    const newName = prompt(t('rename_folder_prompt', {name: oldName}), oldName);
+async function renameFolder(oldName) {
+    const newName = prompt(t('rename_folder_prompt', { name: oldName }), oldName);
     if (!newName?.trim() || newName.trim() === oldName) return;
     const trimmed = newName.trim();
     if (state.folders[trimmed] !== undefined) {
         showToast(t('folder_exists'), 'warning');
         return;
     }
+    try {
+        await renameFolderInDb(oldName, trimmed);
+    } catch (err) {
+        console.error('[MTGVault] Error renombrando carpeta:', err);
+        showToast('❌ Error al renombrar la carpeta', 'error');
+        return;
+    }
     state.folders[trimmed] = state.folders[oldName];
     delete state.folders[oldName];
     if (state.activeFolderFilter === oldName) state.activeFolderFilter = trimmed;
-    saveToStorage();
     renderFolderSidebar();
     handleFilters();
-    showToast(t('toast_folder_renamed', {name: trimmed}), 'success');
+    showToast(t('toast_folder_renamed', { name: trimmed }), 'success');
 }
 
 // ── FILTROS ───────────────────────────────────────────────────
 export function handleFilters() {
     const query = document.getElementById('search-input').value.toLowerCase().trim();
-    const sort = document.getElementById('sort-filter').value;
+    const sort  = document.getElementById('sort-filter').value;
     const color = document.getElementById('color-filter').value;
 
     let cards = state.activeFolderFilter
@@ -243,8 +192,8 @@ export function handleFilters() {
         (c.colors || '').toUpperCase().includes(color)
     );
     if (sort === 'price-desc') cards = [...cards].sort((a, b) => b.price - a.price);
-    if (sort === 'price-asc') cards = [...cards].sort((a, b) => a.price - b.price);
-    if (sort === 'name-asc') cards = [...cards].sort((a, b) => a.name.localeCompare(b.name));
+    if (sort === 'price-asc')  cards = [...cards].sort((a, b) => a.price - b.price);
+    if (sort === 'name-asc')   cards = [...cards].sort((a, b) => a.name.localeCompare(b.name));
 
     renderCards(cards);
 }
@@ -272,15 +221,14 @@ export function renderCards(cards) {
 
     cards.forEach(card => {
         const qty = card.quantity || 1;
-        totalVal += (card.price || 0) * qty;
+        totalVal   += (card.price || 0) * qty;
         totalCount += qty;
 
-        const el = document.createElement('div');
-        el.className = 'mtg-card-item';
-        const eur = card.price > 0 ? `${(card.price * qty).toFixed(2)} €` : '—';
+        const el      = document.createElement('div');
+        el.className  = 'mtg-card-item';
+        const eur     = card.price > 0 ? `${(card.price * qty).toFixed(2)} €` : '—';
         const eurUnit = card.price > 0 && qty > 1 ? ` (${card.price.toFixed(2)} €/u)` : '';
-        const foilBadge = card.isFoil
-            ? `<span class="foil-badge">${t('foil_label')}</span>` : '';
+        const foilBadge = card.isFoil ? `<span class="foil-badge">${t('foil_label')}</span>` : '';
 
         el.innerHTML = `
             <div class="card-image-wrapper${card.isFoil ? ' is-foil' : ''}">
@@ -314,29 +262,22 @@ export function renderCards(cards) {
 // ── MODAL EDICIÓN ─────────────────────────────────────────────
 export function openCardModal(card) {
     const modal = document.getElementById('card-modal');
-    const body = document.getElementById('modal-body');
+    const body  = document.getElementById('modal-body');
 
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
 
-    const prices = {
-        eur: card.priceNormal ?? card.price ?? 0,
-        eur_foil: card.priceFoil ?? 0,
-    };
+    const prices     = { eur: card.priceNormal ?? card.price ?? 0, eur_foil: card.priceFoil ?? 0 };
     const folderName = findCardFolder(card) ?? '';
 
     body.innerHTML = `
     <div class="flex flex-col sm:flex-row gap-5">
-
-        <!-- Imagen -->
         <div class="flex-shrink-0 mx-auto sm:mx-0">
             <img src="${esc(card.imageUrl || card.image || '')}"
                  alt="${esc(card.name)}"
                  class="w-44 rounded-xl shadow-xl"
                  onerror="this.src='https://cards.scryfall.io/large/back/0/a/0a0aeeab-af58-8c7d-4636-9e82-8c27447861f7.jpg'">
         </div>
-
-        <!-- Info + edición -->
         <div class="flex-1 min-w-0">
             <h2 class="text-lg font-extrabold mb-1">${esc(card.name)}</h2>
             <p class="text-xs text-slate-400 mb-4">
@@ -344,8 +285,6 @@ export function openCardModal(card) {
                 ${card.condition ? ` · ${esc(card.condition)}` : ''}
                 ${folderName ? ` · 📁 ${esc(folderName)}` : ''}
             </p>
-
-            <!-- Precios -->
             <div class="grid grid-cols-2 gap-2 mb-4 text-sm">
                 <div class="glass-card p-2 text-center">
                     <p class="text-[10px] text-slate-500 uppercase mb-0.5">Normal</p>
@@ -360,8 +299,6 @@ export function openCardModal(card) {
                     </p>
                 </div>
             </div>
-
-            <!-- Formulario -->
             <div class="flex flex-col gap-3">
                 <div class="flex gap-3">
                     <label class="flex-1">
@@ -378,14 +315,12 @@ export function openCardModal(card) {
                         </select>
                     </label>
                 </div>
-
                 <label class="flex items-center gap-2 cursor-pointer select-none">
                     <input type="checkbox" id="modal-foil" class="accent-sky-400"
                            ${card.isFoil ? 'checked' : ''}>
                     <span class="text-sm">${t('foil_label')}</span>
                     <span class="text-xs text-slate-500">${t('foil_price_note')}</span>
                 </label>
-
                 <label>
                     <span class="text-xs text-slate-400">
                         ${t('notes')} <span class="opacity-50">${t('optional')}</span>
@@ -395,8 +330,6 @@ export function openCardModal(card) {
                               placeholder="${t('notes_placeholder')}">${esc(card.notes || '')}</textarea>
                 </label>
             </div>
-
-            <!-- Botones acción -->
             <div class="flex gap-2 mt-5 pt-4 border-t border-white/10">
                 <button id="modal-save" class="btn-primary flex-1">
                     💾 ${t('save_changes')}
@@ -408,7 +341,6 @@ export function openCardModal(card) {
                     🗑 ${t('delete')}
                 </button>
             </div>
-
             ${card.cardmarketUrl || card.cardmarket_url ? `
                 <a href="${esc(card.cardmarketUrl || card.cardmarket_url)}"
                    target="_blank" rel="noopener"
@@ -419,38 +351,71 @@ export function openCardModal(card) {
     </div>`;
 
     // ── Guardar ───────────────────────────────────────────────
-    document.getElementById('modal-save').addEventListener('click', () => {
-        const newFoil = document.getElementById('modal-foil').checked;
-        card.quantity = Math.max(1, parseInt(document.getElementById('modal-qty').value, 10) || 1);
-        card.condition = document.getElementById('modal-condition').value;
-        card.notes = document.getElementById('modal-notes').value.trim();
-        card.isFoil = newFoil;
+    document.getElementById('modal-save').addEventListener('click', async () => {
+        const newFoil  = document.getElementById('modal-foil').checked;
+        const newQty   = Math.max(1, parseInt(document.getElementById('modal-qty').value, 10) || 1);
+        const newCond  = document.getElementById('modal-condition').value;
+        const newNotes = document.getElementById('modal-notes').value.trim();
 
-        if (newFoil && card.priceFoil > 0) card.price = card.priceFoil;
-        else if (!newFoil && card.priceNormal > 0) card.price = card.priceNormal;
+        // Actualizar precio según foil
+        let newPrice = card.price;
+        if (newFoil && card.priceFoil > 0)        newPrice = card.priceFoil;
+        else if (!newFoil && card.priceNormal > 0) newPrice = card.priceNormal;
 
-        saveToStorage();
+        // Persistir en SQLite
+        try {
+            await updateCollectionCard(card._dbId, {
+                quantity:    newQty,
+                condition:   newCond,
+                notes:       newNotes,
+                isFoil:      newFoil,
+                price:       newPrice,
+                priceNormal: card.priceNormal,
+                priceFoil:   card.priceFoil,
+            });
+        } catch (err) {
+            console.error('[MTGVault] Error actualizando carta:', err);
+            showToast('❌ Error al guardar los cambios', 'error');
+            return;
+        }
+
+        // Actualizar en memoria
+        card.quantity  = newQty;
+        card.condition = newCond;
+        card.notes     = newNotes;
+        card.isFoil    = newFoil;
+        card.price     = newPrice;
+
         closeCardModal();
         handleFilters();
         updateHeaderValue();
         renderFolderSidebar();
-        showToast(t('toast_card_updated', {name: card.name}), 'success');
+        showToast(t('toast_card_updated', { name: card.name }), 'success');
     });
 
     // ── Eliminar ──────────────────────────────────────────────
-    document.getElementById('modal-delete').addEventListener('click', () => {
-        if (!confirm(t('confirm_delete_card', {name: card.name}))) return;
-        const deleted = deleteCardFromState(card);
-        if (!deleted) {
-            showToast('Error: carta no encontrada', 'error');
+    document.getElementById('modal-delete').addEventListener('click', async () => {
+        if (!confirm(t('confirm_delete_card', { name: card.name }))) return;
+
+        try {
+            await deleteCollectionCard(card._dbId);
+        } catch (err) {
+            console.error('[MTGVault] Error eliminando carta:', err);
+            showToast('❌ Error al eliminar la carta', 'error');
             return;
         }
-        saveToStorage();
+
+        const deleted = deleteCardFromState(card);
+        if (!deleted) {
+            showToast('Error: carta no encontrada en memoria', 'error');
+            return;
+        }
+
         closeCardModal();
         handleFilters();
         updateHeaderValue();
         renderFolderSidebar();
-        showToast(t('toast_card_deleted', {name: card.name}), 'info');
+        showToast(t('toast_card_deleted', { name: card.name }), 'info');
     });
 }
 

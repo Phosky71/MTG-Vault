@@ -1,5 +1,5 @@
 import { state }       from './state.js';
-import { saveToStorage, loadFromStorage } from './storage.js';
+import { saveToStorage, saveFolderCards, saveDeck } from './storage.js';
 import { showToast }   from '../utils/ui.js';
 
 const BACKUP_KEY     = 'mtg_vault_backup';
@@ -45,43 +45,43 @@ export function saveBackup() {
  * Restaura el backup SOLO si localStorage principal está vacío.
  * @returns {boolean} true si se restauró
  */
-export function restoreBackupIfNeeded() {
-    // Si hay datos en localStorage principal, no hacer nada
-    loadFromStorage();
-    if (!_isEmpty()) return false;
-
-    // Sin datos — intentar restaurar desde backup
-    try {
-        const raw      = localStorage.getItem(BACKUP_KEY);
-        const checksum = localStorage.getItem(CHECKSUM_KEY);
-
-        if (!raw) return false;
-
-        // Verificar integridad
-        if (checksum && _checksum(raw) !== parseInt(checksum, 10)) {
-            console.warn('[Backup] Checksum no coincide, backup posiblemente corrupto');
-            return false;
-        }
-
-        const parsed = JSON.parse(raw);
-        if (!parsed?.folders) return false;
-
-        state.folders = parsed.folders ?? {};
-        state.decks   = parsed.decks   ?? [];
-
-        // Sincronizar localStorage principal con lo restaurado
-        saveToStorage();
-
-        const totalCards = Object.values(state.folders).flat().length;
-        const totalDecks = state.decks.length;
-        console.info(`[Backup] Restaurado: ${totalCards} cartas, ${totalDecks} mazos`);
-        return true;
-
-    } catch (e) {
-        console.warn('[Backup] Error al restaurar backup:', e);
-        return false;
-    }
-}
+// export function restoreBackupIfNeeded() {
+//     // Si hay datos en localStorage principal, no hacer nada
+//     loadFromStorage();
+//     if (!_isEmpty()) return false;
+//
+//     // Sin datos — intentar restaurar desde backup
+//     try {
+//         const raw      = localStorage.getItem(BACKUP_KEY);
+//         const checksum = localStorage.getItem(CHECKSUM_KEY);
+//
+//         if (!raw) return false;
+//
+//         // Verificar integridad
+//         if (checksum && _checksum(raw) !== parseInt(checksum, 10)) {
+//             console.warn('[Backup] Checksum no coincide, backup posiblemente corrupto');
+//             return false;
+//         }
+//
+//         const parsed = JSON.parse(raw);
+//         if (!parsed?.folders) return false;
+//
+//         state.folders = parsed.folders ?? {};
+//         state.decks   = parsed.decks   ?? [];
+//
+//         // Sincronizar localStorage principal con lo restaurado
+//         saveToStorage();
+//
+//         const totalCards = Object.values(state.folders).flat().length;
+//         const totalDecks = state.decks.length;
+//         console.info(`[Backup] Restaurado: ${totalCards} cartas, ${totalDecks} mazos`);
+//         return true;
+//
+//     } catch (e) {
+//         console.warn('[Backup] Error al restaurar backup:', e);
+//         return false;
+//     }
+// }
 
 // ── AUTOGUARDADO PERIÓDICO ────────────────────────────────────
 let _autoSaveTimer = null;
@@ -125,7 +125,7 @@ export function downloadBackup() {
 export function importBackupFromFile(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = e => {
+        reader.onload = async e => {
             try {
                 const parsed = JSON.parse(e.target.result);
                 if (!parsed?.folders) throw new Error('Formato inválido');
@@ -142,8 +142,16 @@ export function importBackupFromFile(file) {
 
                 state.folders = parsed.folders ?? {};
                 state.decks   = parsed.decks   ?? [];
-                saveToStorage();
-                saveBackup();
+
+                // Persistir en SQLite
+                for (const [folderName, cards] of Object.entries(state.folders)) {
+                    await saveFolderCards(folderName, cards);
+                }
+                for (const deck of state.decks) {
+                    await saveDeck(deck);
+                }
+
+                saveBackup(); // actualizar backup localStorage con el estado restaurado
                 resolve(true);
             } catch (err) {
                 reject(err);

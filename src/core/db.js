@@ -1,12 +1,4 @@
-/**
- * IndexedDB wrapper para MTG Vault.
- * Almacena en local:
- *   • cards      — cartas cacheadas de Scryfall
- *   • rulings    — reglas de cartas
- *   • searches   — resultados de búsqueda (TTL 1h por defecto)
- */
-
-const DB_NAME = 'mtg_vault_db';
+const DB_NAME    = 'mtg_vault_db';
 const DB_VERSION = 3;
 
 let _db = null;
@@ -16,36 +8,35 @@ export async function initDB() {
     return new Promise((resolve, reject) => {
         const req = indexedDB.open(DB_NAME, DB_VERSION);
 
-        req.onupgradeneeded = ({target: {result: db}}) => {
+        req.onupgradeneeded = ({ target: { result: db } }) => {
             if (!db.objectStoreNames.contains('cards')) {
-                const cs = db.createObjectStore('cards', {keyPath: 'id'});
-                cs.createIndex('by_name', 'name', {unique: false});
-                cs.createIndex('by_oracle_id', 'oracle_id', {unique: false});
-                cs.createIndex('by_set', 'set', {unique: false});
-                cs.createIndex('by_cached_at', 'cached_at', {unique: false});
+                const cs = db.createObjectStore('cards', { keyPath: 'id' });
+                cs.createIndex('by_name',      'name',      { unique: false });
+                cs.createIndex('by_oracle_id', 'oracle_id', { unique: false });
+                cs.createIndex('by_set',       'set',       { unique: false });
+                cs.createIndex('by_cached_at', 'cached_at', { unique: false });
             }
             if (!db.objectStoreNames.contains('rulings')) {
-                db.createObjectStore('rulings', {keyPath: 'card_id'});
+                db.createObjectStore('rulings', { keyPath: 'card_id' });
             }
             if (!db.objectStoreNames.contains('searches')) {
-                const ss = db.createObjectStore('searches', {keyPath: 'key'});
-                ss.createIndex('by_ts', 'ts', {unique: false});
+                const ss = db.createObjectStore('searches', { keyPath: 'key' });
+                ss.createIndex('by_ts', 'ts', { unique: false });
             }
+            // priceHistory y wishlist se mantienen en el schema para no romper
+            // instalaciones existentes, pero ya no se escriben desde aquí.
             if (!db.objectStoreNames.contains('priceHistory')) {
-                db.createObjectStore('priceHistory', {keyPath: 'date'});
+                db.createObjectStore('priceHistory', { keyPath: 'date' });
             }
             if (!db.objectStoreNames.contains('wishlist')) {
-                const ws = db.createObjectStore('wishlist', {keyPath: 'id'});
-                ws.createIndex('by_priority', 'priority', {unique: false});
-                ws.createIndex('by_name', 'name', {unique: false});
+                const ws = db.createObjectStore('wishlist', { keyPath: 'id' });
+                ws.createIndex('by_priority', 'priority', { unique: false });
+                ws.createIndex('by_name',     'name',     { unique: false });
             }
         };
 
-        req.onsuccess = e => {
-            _db = e.target.result;
-            resolve(_db);
-        };
-        req.onerror = e => reject(e.target.error);
+        req.onsuccess = e => { _db = e.target.result; resolve(_db); };
+        req.onerror   = e => reject(e.target.error);
     });
 }
 
@@ -58,7 +49,7 @@ function idbGet(store, key) {
     return new Promise((res, rej) => {
         const req = tx(store).get(key);
         req.onsuccess = e => res(e.target.result ?? null);
-        req.onerror = e => rej(e.target.error);
+        req.onerror   = e => rej(e.target.error);
     });
 }
 
@@ -66,7 +57,7 @@ function idbPut(store, value) {
     return new Promise((res, rej) => {
         const req = tx(store, 'readwrite').put(value);
         req.onsuccess = () => res();
-        req.onerror = e => rej(e.target.error);
+        req.onerror   = e => rej(e.target.error);
     });
 }
 
@@ -74,7 +65,7 @@ function idbClear(store) {
     return new Promise((res, rej) => {
         const req = tx(store, 'readwrite').clear();
         req.onsuccess = () => res();
-        req.onerror = e => rej(e.target.error);
+        req.onerror   = e => rej(e.target.error);
     });
 }
 
@@ -82,13 +73,12 @@ function idbClear(store) {
 export async function cacheCards(cards) {
     await initDB();
     const now = Date.now();
-    const db = _db;
     return new Promise((res, rej) => {
-        const t = db.transaction(['cards'], 'readwrite');
+        const t = _db.transaction(['cards'], 'readwrite');
         const s = t.objectStore('cards');
-        cards.forEach(c => s.put({...c, cached_at: now}));
+        cards.forEach(c => s.put({ ...c, cached_at: now }));
         t.oncomplete = res;
-        t.onerror = e => rej(e.target.error);
+        t.onerror    = e => rej(e.target.error);
     });
 }
 
@@ -100,10 +90,10 @@ export async function getCachedCard(id) {
 // ── RULINGS ───────────────────────────────────────────────────
 export async function cacheRulings(cardId, rulings) {
     await initDB();
-    return idbPut('rulings', {card_id: cardId, data: rulings, ts: Date.now()});
+    return idbPut('rulings', { card_id: cardId, data: rulings, ts: Date.now() });
 }
 
-export async function getCachedRulings(cardId, maxAgeMs = 86_400_000) { // 24h
+export async function getCachedRulings(cardId, maxAgeMs = 86_400_000) {
     await initDB();
     const row = await idbGet('rulings', cardId);
     if (row && (Date.now() - row.ts) < maxAgeMs) return row.data;
@@ -113,10 +103,10 @@ export async function getCachedRulings(cardId, maxAgeMs = 86_400_000) { // 24h
 // ── BÚSQUEDAS ─────────────────────────────────────────────────
 export async function cacheSearch(key, result) {
     await initDB();
-    return idbPut('searches', {key, result, ts: Date.now()});
+    return idbPut('searches', { key, result, ts: Date.now() });
 }
 
-export async function getCachedSearch(key, maxAgeMs = 3_600_000) { // 1h
+export async function getCachedSearch(key, maxAgeMs = 3_600_000) {
     await initDB();
     const row = await idbGet('searches', key);
     if (row && (Date.now() - row.ts) < maxAgeMs) return row.result;
@@ -131,7 +121,7 @@ export async function getDBStats() {
         counts[store] = await new Promise((res, rej) => {
             const req = tx(store).count();
             req.onsuccess = e => res(e.target.result);
-            req.onerror = e => rej(e.target.error);
+            req.onerror   = e => rej(e.target.error);
         });
     }
     return counts;
@@ -141,65 +131,3 @@ export async function clearCache() {
     await initDB();
     await Promise.all(['cards', 'rulings', 'searches'].map(idbClear));
 }
-
-export async function savePriceSnapshot(value) {
-    const db = await initDB();
-    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-    return new Promise((res, rej) => {
-        const tx = db.transaction('priceHistory', 'readwrite');
-        const store = tx.objectStore('priceHistory');
-        const req = store.put({date: today, value: parseFloat(value.toFixed(2))});
-        req.onsuccess = () => res();
-        req.onerror = e => rej(e.target.error);
-    });
-}
-
-export async function getPriceHistory(days = 60) {
-    const db = await initDB();
-    return new Promise((res, rej) => {
-        const tx = db.transaction('priceHistory', 'readonly');
-        const store = tx.objectStore('priceHistory');
-        const req = store.getAll();
-        req.onsuccess = e => {
-            const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - days);
-            const result = (e.target.result ?? [])
-                .filter(r => new Date(r.date) >= cutoff)
-                .sort((a, b) => a.date.localeCompare(b.date));
-            res(result);
-        };
-        req.onerror = e => rej(e.target.error);
-    });
-}
-
-export async function getWishlist() {
-    const db = await initDB();
-    return new Promise((res, rej) => {
-        const req = db.transaction('wishlist', 'readonly')
-            .objectStore('wishlist').getAll();
-        req.onsuccess = e => res(e.target.result ?? []);
-        req.onerror = e => rej(e.target.error);
-    });
-}
-
-export async function saveWishlistItem(item) {
-    const db = await initDB();
-    return new Promise((res, rej) => {
-        const req = db.transaction('wishlist', 'readwrite')
-            .objectStore('wishlist').put(item);
-        req.onsuccess = () => res();
-        req.onerror = e => rej(e.target.error);
-    });
-}
-
-export async function deleteWishlistItem(id) {
-    const db = await initDB();
-    return new Promise((res, rej) => {
-        const req = db.transaction('wishlist', 'readwrite')
-            .objectStore('wishlist').delete(id);
-        req.onsuccess = () => res();
-        req.onerror = e => rej(e.target.error);
-    });
-}
-
-

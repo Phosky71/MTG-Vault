@@ -4,6 +4,16 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
     root: '.',
+    server: {
+        port: 5173,
+        strictPort: true,
+        host: 'localhost',
+        hmr: {
+            protocol: 'ws',
+            host: 'localhost',
+            port: 5173,
+        },
+    },
     plugins: [
         tailwindcss(),
 

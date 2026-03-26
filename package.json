@@ -19,6 +19,7 @@
     "vite-plugin-pwa": "^0.21.1"
   },
   "dependencies": {
+    "@tauri-apps/plugin-sql": "^2.3.2",
     "chart.js": "^4.5.1"
   }
 }

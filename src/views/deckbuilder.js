@@ -1,6 +1,6 @@
 import {state} from '../core/state.js';
 import {t} from '../i18n/index.js';
-import {saveToStorage} from '../core/storage.js';
+import { saveDeck } from '../core/storage.js';
 import {showToast} from '../utils/ui.js';
 import * as SF from '../api/scryfall.js';
 import {cacheCards, cacheSearch, getCachedSearch} from '../core/db.js';
@@ -343,27 +343,27 @@ let _timer = null;
 let _loading = false;
 
 // ── MIGRACIÓN (formato viejo → nuevo) ─────────────────────────
-function migrateDeck(deck) {
+async function migrateDeck(deck) {
     if (!deck.mainboard) {
         deck.mainboard = deck.cards ?? [];
         deck.sideboard = [];
         deck.commander = null;
         deck.companion = null;
-        deck.notes = '';
+        deck.notes     = '';
         deck.createdAt = deck.createdAt ?? Date.now();
         delete deck.cards;
-        saveToStorage();
+        await saveDeck(deck);
     }
     return deck;
 }
 
 // ── ABRIR / CERRAR ────────────────────────────────────────────
-export function openDeckBuilder(deckIndex) {
+export async function openDeckBuilder(deckIndex) {
     _deckIdx = deckIndex;
     _deck = state.decks[deckIndex];
     if (!_deck) return;
 
-    migrateDeck(_deck);
+    await migrateDeck(_deck);
 
     document.getElementById('view-deckbuilder').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -609,7 +609,7 @@ function builderSkeleton(n) {
 }
 
 // ── AÑADIR / ELIMINAR CARTAS ──────────────────────────────────
-function addCard(card, zone = 'mainboard') {
+async function addCard(card, zone = 'mainboard') {
     const rules = FORMAT_RULES[_deck.format] ?? FORMAT_RULES.modern;
     if (!_deck[zone]) _deck[zone] = [];
 
@@ -672,13 +672,13 @@ function addCard(card, zone = 'mainboard') {
         });
     }
 
-    saveToStorage();
     _renderAll();
+    await saveDeck(state.decks[_deckIdx]);
     showToast(`${card.name} → ${zone === 'mainboard' ? t('mainboard') : t('sideboard')}`, 'success');
 }
 
 
-function setCommander(card) {
+async function setCommander(card) {
     const prices = SF.getPrices(card);
     _deck.commander = {
         name: card.name,
@@ -692,24 +692,24 @@ function setCommander(card) {
         colors: (card.color_identity ?? []).join(''),
         set: (card.set ?? '').toUpperCase(),
     };
-    saveToStorage();
     _renderAll();
+    await saveDeck(state.decks[_deckIdx]);
     showToast(`⭐ ${card.name} → Commander`, 'success');
 }
 
-function removeCard(cardId, zone) {
+async function removeCard(cardId, zone) {
     if (zone === 'commander') {
         _deck.commander = null;
-        saveToStorage();
         _renderAll();
+        await saveDeck(state.decks[_deckIdx]);
         return;
     }
     _deck[zone] = (_deck[zone] ?? []).filter(c => c.scryfallId !== cardId);
-    saveToStorage();
     _renderAll();
+    await saveDeck(state.decks[_deckIdx]);
 }
 
-function updateQty(cardId, zone, delta) {
+async function updateQty(cardId, zone, delta) {
     const card = _deck[zone]?.find(c => c.scryfallId === cardId);
     if (!card) return;
 
@@ -718,7 +718,7 @@ function updateQty(cardId, zone, delta) {
     const next = (card.quantity || 1) + delta;
 
     if (next <= 0) {
-        removeCard(cardId, zone);
+        await removeCard(cardId, zone);
         return;
     }
     if (!isBasic && !rules.singleton && delta > 0) {
@@ -731,8 +731,8 @@ function updateQty(cardId, zone, delta) {
     }
 
     card.quantity = Math.min(99, next);
-    saveToStorage();
     _renderAll();
+    await saveDeck(state.decks[_deckIdx]);
 }
 
 // ── RENDER DECK LIST ──────────────────────────────────────────
@@ -1117,7 +1117,7 @@ async function parseAndImportDecklist(text) {
         }
     }
 
-    saveToStorage();
+    await saveDeck(state.decks[_deckIdx]);
     _renderAll();
     showToast(t('import_done', {n: count, errors}), errors > 0 ? 'warning' : 'success');
 }
