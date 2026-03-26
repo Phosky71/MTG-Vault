@@ -9,8 +9,8 @@
   "scripts": {
     "dev": "vite --open",
     "build": "vite build",
-    "preview": "vite preview --port 4173"
-    "tauri": "tauri",
+    "preview": "vite preview --port 4173",
+    "tauri": "tauri"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",
