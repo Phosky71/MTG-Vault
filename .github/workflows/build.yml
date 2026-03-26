@@ -10,7 +10,11 @@ jobs:
       with:
         node-version: 20
     - uses: dtolnay/rust-toolchain@stable
-    - run: npm ci  # yarn ci si usas yarn
-    - uses: tauri-apps/tauri-action@v0
+    - name: Instalar dependencias
+      run: npm ci
+    - name: Build frontend
+      run: npm run build
+    - name: Build Tauri
+      uses: tauri-apps/tauri-action@v0
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
