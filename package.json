@@ -1,10 +1,23 @@
 {
   "name": "mtg-vault",
   "version": "1.0.0",
-  "description": "",
-  "main": "js/main.js",
+  "description": "Gestor local de colección Magic: The Gathering — offline-first, multiidioma",
+  "author": "Tu Nombre",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
   },
-  "private": true
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "tailwindcss": "^4.1.0",
+    "vite": "^6.0.0",
+    "vite-plugin-pwa": "^0.21.1"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1"
+  }
 }

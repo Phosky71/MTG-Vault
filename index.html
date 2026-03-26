@@ -5,23 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0f172a">
-    <title>MTG Vault</title>
+    <meta name="description" content="Gestor de colección Magic: The Gathering — offline-first">
+    <link rel="icon" href="/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="manifest" href="/manifest.webmanifest">
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {sans: ['Inter', 'sans-serif']},
-                    colors: {'slate-950': '#0f172a'}
-                }
-            }
-        }
-    </script>
-    <link rel="stylesheet" href="css/custom.css">
+    <link rel="stylesheet" href="/src/styles/main.css">
+    <title>MTG Vault</title>
 </head>
 
 <body class="bg-[#0f172a] text-white min-h-screen font-sans antialiased pb-16 bg-gradient">
@@ -39,9 +33,11 @@
 
         <nav class="flex gap-1 flex-1 flex-wrap" id="main-nav">
             <button class="nav-btn active" data-target="view-collection" data-i18n="nav_collection">Colección</button>
-            <button class="nav-btn" data-target="view-decks" data-i18n="nav_decks">Mazos</button>
-            <button class="nav-btn" data-target="view-dashboard" data-i18n="nav_dashboard">Dashboard</button>
-            <button class="nav-btn" data-target="view-search" data-i18n="nav_search">Buscar</button>
+            <button class="nav-btn" data-target="view-decks"      data-i18n="nav_decks">Mazos</button>
+            <button class="nav-btn" data-target="view-dashboard"  data-i18n="nav_dashboard">Dashboard</button>
+            <button class="nav-btn" data-target="view-search"     data-i18n="nav_search">Buscar</button>
+            <!-- ← NUEVO -->
+            <button class="nav-btn" data-target="view-wishlist"   data-i18n="nav_wishlist">💭 Wishlist</button>
         </nav>
 
         <div class="flex items-center gap-3 ml-auto flex-shrink-0">
@@ -60,20 +56,19 @@
     <!-- ── COLECCIÓN ── -->
     <section id="view-collection" class="view-section">
 
-        <!-- Filtros -->
         <div class="flex flex-wrap gap-3 mb-6">
             <input type="text" id="search-input"
                    class="input-glass flex-1 min-w-[180px]"
                    data-i18n-placeholder="search_placeholder"
                    placeholder="Buscar cartas...">
             <select id="sort-filter" class="input-glass w-auto">
-                <option value="" data-i18n="sort_default">Ordenar...</option>
-                <option value="price-desc" data-i18n="sort_price_desc">Precio (Mayor a Menor)</option>
-                <option value="price-asc" data-i18n="sort_price_asc">Precio (Menor a Mayor)</option>
-                <option value="name-asc" data-i18n="sort_name_asc">Nombre (A-Z)</option>
+                <option value=""            data-i18n="sort_default">Ordenar...</option>
+                <option value="price-desc"  data-i18n="sort_price_desc">Precio (Mayor a Menor)</option>
+                <option value="price-asc"   data-i18n="sort_price_asc">Precio (Menor a Mayor)</option>
+                <option value="name-asc"    data-i18n="sort_name_asc">Nombre (A-Z)</option>
             </select>
             <select id="color-filter" class="input-glass w-auto">
-                <option value="" data-i18n="color_all">Todos los colores</option>
+                <option value=""  data-i18n="color_all">Todos los colores</option>
                 <option value="W" data-i18n="color_white">Blanco</option>
                 <option value="U" data-i18n="color_blue">Azul</option>
                 <option value="B" data-i18n="color_black">Negro</option>
@@ -83,23 +78,21 @@
             </select>
         </div>
 
-        <!-- Layout Sidebar + Grid -->
         <div class="flex flex-col md:flex-row gap-0 items-start">
 
-            <!-- Sidebar Carpetas -->
             <aside id="folder-sidebar"
                    class="w-full md:w-52 flex-shrink-0
-                 border-b md:border-b-0 md:border-r border-white/10
-                 pb-4 md:pb-0 md:pr-4 mb-5 md:mb-0 md:mr-5
-                 md:sticky md:top-[72px] md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
+                          border-b md:border-b-0 md:border-r border-white/10
+                          pb-4 md:pb-0 md:pr-4 mb-5 md:mb-0 md:mr-5
+                          md:sticky md:top-[72px] md:max-h-[calc(100vh-5rem)] md:overflow-y-auto">
 
                 <div class="flex justify-between items-center mb-3 pb-3 border-b border-white/10">
                     <h3 class="text-[11px] font-semibold uppercase tracking-widest text-slate-400"
                         data-i18n="folders_title">Carpetas</h3>
                     <button id="btn-new-folder"
                             class="w-7 h-7 flex items-center justify-center rounded-md
-                     bg-sky-400/10 text-sky-400 border border-sky-400/30
-                     hover:bg-sky-400/25 transition-colors text-base leading-none font-bold"
+                                   bg-sky-400/10 text-sky-400 border border-sky-400/30
+                                   hover:bg-sky-400/25 transition-colors text-base leading-none font-bold"
                             title="+">+
                     </button>
                 </div>
@@ -113,17 +106,14 @@
                 </ul>
             </aside>
 
-            <!-- Grid -->
             <div class="flex-1 min-w-0">
                 <input type="file" id="csv-upload" accept=".csv,.txt" class="hidden">
                 <div id="card-grid"
                      class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 </div>
                 <div class="flex flex-wrap gap-x-6 gap-y-1 mt-4 text-sm text-slate-400">
-                    <span><span data-i18n="total_cards">Total de Cartas</span>: <strong id="total-cards"
-                                                                                        class="text-white">0</strong></span>
-                    <span><span data-i18n="total_value">Valor Total</span>: <strong id="total-value"
-                                                                                    class="text-emerald-400">0.00 €</strong></span>
+                    <span><span data-i18n="total_cards">Total de Cartas</span>: <strong id="total-cards" class="text-white">0</strong></span>
+                    <span><span data-i18n="total_value">Valor Total</span>: <strong id="total-value" class="text-emerald-400">0.00 €</strong></span>
                 </div>
             </div>
         </div>
@@ -133,119 +123,125 @@
     <section id="view-decks" class="view-section hidden">
 
         <form id="deck-import-form" class="flex flex-wrap gap-3 mb-3">
-            <input type="url" id="deck-url-input" class="input-glass flex-[2] min-w-[200px]"
+            <input type="url"  id="deck-url-input"  class="input-glass flex-[2] min-w-[200px]"
                    data-i18n-placeholder="deck_url_placeholder" placeholder="URL Moxfield, Archidekt...">
             <input type="text" id="deck-name-input" class="input-glass flex-1 min-w-[150px]"
                    data-i18n-placeholder="deck_name_placeholder" placeholder="Nombre del mazo">
-            <select id="deck-format-select" class="input-glass w-auto">
-                <option value="" data-i18n="format_select">Formato...</option>
-                <option value="Standard">Standard</option>
-                <option value="Pioneer">Pioneer</option>
-                <option value="Modern">Modern</option>
-                <option value="Legacy">Legacy</option>
-                <option value="Commander">Commander</option>
-                <option value="Pauper">Pauper</option>
-                <option value="Casual" data-i18n="format_casual">Otro / Casual</option>
+            <select id="deck-format-select" class="input-glass w-auto text-sm">
+                <optgroup label="Competitivo">
+                    <option value="standard">Standard</option>
+                    <option value="pioneer">Pioneer</option>
+                    <option value="modern">Modern</option>
+                    <option value="legacy">Legacy</option>
+                    <option value="vintage">Vintage</option>
+                    <option value="pauper">Pauper</option>
+                    <option value="historic">Historic</option>
+                    <option value="explorer">Explorer</option>
+                    <option value="alchemy">Alchemy</option>
+                    <option value="timeless">Timeless</option>
+                </optgroup>
+                <optgroup label="Commander">
+                    <option value="commander">Commander (EDH)</option>
+                    <option value="duel">Duel Commander</option>
+                    <option value="brawl">Brawl</option>
+                    <option value="oathbreaker">Oathbreaker</option>
+                </optgroup>
+                <optgroup label="Casual 🍺">
+                    <option value="kitchentable">Kitchen Table</option>
+                    <option value="cmdkitchentable">Cmd Kitchen Table</option>
+                </optgroup>
             </select>
             <button type="submit" class="btn-primary" data-i18n="btn_import_deck">Importar Mazo</button>
         </form>
 
         <div class="flex gap-3 mb-6">
             <select id="format-filter" class="input-glass w-auto">
-                <option value="" data-i18n="format_all">Todos los formatos</option>
+                <option value=""        data-i18n="format_all">Todos los formatos</option>
                 <option value="Standard">Standard</option>
                 <option value="Pioneer">Pioneer</option>
                 <option value="Modern">Modern</option>
                 <option value="Legacy">Legacy</option>
                 <option value="Commander">Commander</option>
                 <option value="Pauper">Pauper</option>
-                <option value="Casual" data-i18n="format_casual">Otro / Casual</option>
+                <option value="Casual"  data-i18n="format_casual">Otro / Casual</option>
             </select>
+            <button id="btn-new-deck" class="btn-primary text-sm">＋ Nuevo mazo</button>
         </div>
 
         <div id="deck-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
     </section>
 
     <!-- ── DASHBOARD ── -->
-    <section id="view-dashboard" class="view-section hidden">
+    <section id="view-dashboard" class="view-section hidden p-4 max-w-7xl mx-auto w-full">
 
-        <h2 class="text-2xl font-extrabold mb-6" data-i18n="dashboard_title">Dashboard de Colección</h2>
+        <div id="dash-summary" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6"></div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-            <div class="glass-card p-5 text-center stat-card-hover">
-                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2"
-                   data-i18n="total_cards">Total de Cartas</p>
-                <p id="dash-total-cards" class="text-3xl font-extrabold">0</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+            <div class="glass-card p-4">
+                <h3 class="dash-chart-title">🎨 Distribución de colores</h3>
+                <div id="chart-colors-wrap" class="dash-chart-container">
+                    <canvas id="chart-colors"></canvas>
+                </div>
             </div>
-            <div class="glass-card p-5 text-center stat-card-hover">
-                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2"
-                   data-i18n="unique_cards">Cartas Únicas</p>
-                <p id="dash-unique-cards" class="text-3xl font-extrabold">0</p>
+            <div class="glass-card p-4">
+                <h3 class="dash-chart-title">💎 Desglose por rareza</h3>
+                <div id="chart-rarity-wrap" class="dash-chart-container">
+                    <canvas id="chart-rarity"></canvas>
+                </div>
             </div>
-            <div class="glass-card p-5 text-center stat-card-hover">
-                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2"
-                   data-i18n="total_value">Valor Total</p>
-                <p id="dash-total-value" class="text-3xl font-extrabold text-emerald-400 tabular-nums">0.00 €</p>
+            <div class="glass-card p-4">
+                <h3 class="dash-chart-title">⭐ Top 10 cartas más valiosas</h3>
+                <div id="chart-top-cards-wrap" class="dash-chart-container">
+                    <canvas id="chart-top-cards"></canvas>
+                </div>
             </div>
-            <div class="glass-card p-5 text-center stat-card-hover">
-                <p class="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2"
-                   data-i18n="nav_decks">Mazos</p>
-                <p id="dash-total-decks" class="text-3xl font-extrabold">0</p>
+            <div class="glass-card p-4">
+                <h3 class="dash-chart-title">📦 Distribución por edición</h3>
+                <div id="chart-sets-wrap" class="dash-chart-container">
+                    <canvas id="chart-sets"></canvas>
+                </div>
             </div>
         </div>
 
-        <h3 class="text-lg font-bold mb-4" data-i18n="folders_breakdown">Desglose por Carpetas</h3>
-        <div id="folders-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+        <div class="glass-card p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="dash-chart-title mb-0">📈 Evolución del valor total</h3>
+                <span class="text-xs text-slate-500">Últimos 60 días</span>
+            </div>
+            <div id="chart-history-wrap" class="dash-chart-container" style="height:200px">
+                <canvas id="chart-value-history"></canvas>
+            </div>
+        </div>
     </section>
 
-
-    <!-- ════════════════ MODAL CARTA ════════════════ -->
-    <div id="card-modal"
-         class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[500] hidden items-center justify-center p-4"
-         role="dialog" aria-modal="true">
-        <div class="glass-card w-full max-w-xl relative max-h-[90vh] overflow-y-auto modal-anim">
-            <button id="modal-close"
-                    class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full
-               bg-white/8 hover:bg-red-400/20 hover:text-red-400
-               transition-colors text-slate-400 text-sm">✕
-            </button>
-            <div id="modal-body" class="p-6"></div>
-        </div>
-    </div>
-
-    <!-- ════════════════ CARGAR CARTA ════════════════ -->
+    <!-- ── BÚSQUEDA ── -->
     <section id="view-search" class="view-section hidden">
 
-        <div class="flex flex-col gap-4 mb-6">
+        <div class="flex flex-col gap-3 mb-6">
             <div class="relative">
-                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base pointer-events-none">🔍</span>
+                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">🔍</span>
                 <input type="text" id="sf-search-input"
                        class="input-glass w-full pl-10 pr-4 text-base py-3"
                        data-i18n-placeholder="search_scryfall_placeholder"
-                       placeholder="Busca cartas: Mox Opal · t:artifact · o:flying f:modern...">
+                       placeholder="Busca cartas: Lightning Bolt · t:creature c:red · f:modern o:flying...">
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
-                <!-- Botones de color MTG -->
-                <div class="flex gap-1.5 items-center flex-wrap">
+                <div class="flex gap-1.5 items-center flex-shrink-0">
                     <span class="text-xs text-slate-500">Color:</span>
-                    <button class="sf-color-btn" data-color="W" title="Blanco (White)">☀️</button>
-                    <button class="sf-color-btn" data-color="U" title="Azul (Blue)">💧</button>
-                    <button class="sf-color-btn" data-color="B" title="Negro (Black)">💀</button>
-                    <button class="sf-color-btn" data-color="R" title="Rojo (Red)">🔥</button>
-                    <button class="sf-color-btn" data-color="G" title="Verde (Green)">🌲</button>
-                    <button class="sf-color-btn" data-color="C" title="Incoloro (Colorless)">💎</button>
+                    <button class="sf-color-btn" data-color="W" title="Blanco">☀️</button>
+                    <button class="sf-color-btn" data-color="U" title="Azul">💧</button>
+                    <button class="sf-color-btn" data-color="B" title="Negro">💀</button>
+                    <button class="sf-color-btn" data-color="R" title="Rojo">🔥</button>
+                    <button class="sf-color-btn" data-color="G" title="Verde">🌲</button>
+                    <button class="sf-color-btn" data-color="C" title="Incoloro">💎</button>
                 </div>
-
-                <!-- Tipo de carta -->
                 <input type="text" id="sf-type-input"
-                       class="input-glass w-32 text-sm"
+                       class="input-glass w-28 text-sm"
                        data-i18n-placeholder="type_placeholder"
                        placeholder="Tipo...">
-
-                <!-- Formato legal -->
                 <select id="sf-format-select" class="input-glass w-auto text-sm">
-                    <option value="" data-i18n="format_all">Todos los formatos</option>
+                    <option value=""           data-i18n="format_all">Todos los formatos</option>
                     <option value="standard">Standard</option>
                     <option value="pioneer">Pioneer</option>
                     <option value="modern">Modern</option>
@@ -255,41 +251,168 @@
                     <option value="vintage">Vintage</option>
                     <option value="historic">Historic</option>
                 </select>
+            </div>
 
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="price-range-group flex-shrink-0">
+                    <span class="price-range-symbol">€</span>
+                    <input type="number" id="sf-price-min" class="price-range-input" min="0" step="0.5" placeholder="Min">
+                    <span class="price-range-sep">—</span>
+                    <input type="number" id="sf-price-max" class="price-range-input" min="0" step="0.5" placeholder="Max">
+                </div>
+                <select id="sf-sort-select" class="input-glass w-auto text-sm">
+                    <option value="name:asc"      data-i18n="sort_name_asc">Nombre A-Z</option>
+                    <option value="eur:desc"       data-i18n="sort_price_desc">Precio € ↓ Mayor</option>
+                    <option value="eur:asc"        data-i18n="sort_price_asc">Precio € ↑ Menor</option>
+                    <option value="usd:desc">Precio $ ↓ Mayor</option>
+                    <option value="usd:asc">Precio $ ↑ Menor</option>
+                    <option value="released:desc"  data-i18n="sort_newest">Más reciente</option>
+                    <option value="edhrec:desc"    data-i18n="sort_popularity">Popularidad</option>
+                    <option value="rarity:desc"    data-i18n="sort_rarity">Rareza</option>
+                    <option value="cmc:asc"        data-i18n="sort_cmc">Coste de maná</option>
+                </select>
+                <button id="sf-clear-filters"
+                        class="text-xs text-slate-400 hover:text-slate-200 transition-colors px-2 py-1.5 rounded-md hover:bg-white/5 flex-shrink-0"
+                        data-i18n="clear_filters">✕ Limpiar</button>
                 <span id="sf-results-info" class="text-xs text-slate-500 ml-auto tabular-nums"></span>
             </div>
         </div>
 
-        <!-- Grid de resultados -->
         <div id="sf-results-grid"
-             class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        </div>
+             class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
 
-        <!-- Botón cargar más -->
         <div class="flex justify-center mt-8 mb-4">
-            <button id="sf-load-more"
-                    class="hidden btn-primary px-10 py-2.5 text-sm"
-                    data-i18n="load_more">
+            <button id="sf-load-more" class="hidden btn-primary px-10 py-2.5 text-sm" data-i18n="load_more">
                 Cargar más
             </button>
         </div>
-
     </section>
 
-</main><!-- FIN </main> -->
+    <!-- ── WISHLIST ── -->  <!-- ← MOVIDA DENTRO DE <main> -->
+    <section id="view-wishlist" class="view-section hidden p-4 max-w-6xl mx-auto w-full">
 
-<!-- ════════════════ MODAL SCRYFALL ════════════════ -->
-<div id="sf-modal"
-     class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[600] hidden items-center justify-center p-4"
-     role="dialog" aria-modal="true" aria-label="Detalle de carta">
-    <div class="glass-card w-full max-w-2xl relative max-h-[92vh] overflow-y-auto modal-anim">
-        <button id="sf-modal-close"
-                class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full
-             bg-white/8 hover:bg-red-400/20 hover:text-red-400
-             transition-colors text-slate-400 text-sm z-10">✕
-        </button>
-        <div id="sf-modal-body" class="p-6"></div>
+        <div class="flex flex-wrap items-center gap-3 mb-5">
+            <div class="flex gap-2 flex-wrap">
+                <div class="wl-stat-chip">
+                    🃏 <span id="wl-count">0</span> <span class="opacity-60">cartas</span>
+                </div>
+                <div class="wl-stat-chip text-emerald-400">
+                    💰 <span id="wl-total-val">0.00 €</span>
+                </div>
+                <div class="wl-stat-chip text-green-400">
+                    🎯 <span id="wl-in-price">0</span> <span class="opacity-60">en precio</span>
+                </div>
+            </div>
+            <div class="flex-1"></div>
+            <input id="wl-search-input" type="search"
+                   class="wl-search-input" placeholder="🔍 Buscar en wishlist…">
+            <button id="wl-btn-refresh-all" class="wl-btn-secondary">🔄 Actualizar precios</button>
+            <button id="wl-btn-add" class="wl-btn-primary">＋ Añadir carta</button>
+        </div>
+
+        <div class="flex gap-2 mb-4 flex-wrap">
+            <button class="wl-filter-btn active" data-priority="all">📋 Todas</button>
+            <button class="wl-filter-btn" data-priority="high">🔴 Alta prioridad</button>
+            <button class="wl-filter-btn" data-priority="medium">🟡 Media prioridad</button>
+            <button class="wl-filter-btn" data-priority="low">🟢 Baja prioridad</button>
+        </div>
+
+        <div id="wl-list" class="wl-list"></div>
+    </section>
+
+    <!-- ════════════════ MODAL CARTA ════════════════ -->
+    <div id="card-modal"
+         class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[500] hidden items-center justify-center p-4"
+         role="dialog" aria-modal="true">
+        <div class="glass-card w-full max-w-xl relative max-h-[90vh] overflow-y-auto modal-anim">
+            <button id="modal-close"
+                    class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full
+                           bg-white/8 hover:bg-red-400/20 hover:text-red-400
+                           transition-colors text-slate-400 text-sm">✕
+            </button>
+            <div id="modal-body" class="p-6"></div>
+        </div>
     </div>
+
+    <!-- ════════════════ MODAL SCRYFALL ════════════════ -->
+    <div id="sf-modal"
+         class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[600] hidden items-center justify-center p-4"
+         role="dialog" aria-modal="true">
+        <div class="glass-card w-full max-w-2xl relative max-h-[92vh] overflow-y-auto modal-anim">
+            <button id="sf-modal-close"
+                    class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full
+                           bg-white/8 hover:bg-red-400/20 hover:text-red-400 transition-colors text-slate-400 text-sm z-10">✕
+            </button>
+            <div id="sf-modal-body" class="p-6"></div>
+        </div>
+    </div>
+
+    <!-- ════ PWA INSTALL BANNER ════ -->
+    <div id="pwa-toast">
+        <span id="pwa-toast-text">📲 Instalar MTG Vault como app</span>
+        <button id="pwa-toast-install">Instalar</button>
+        <button id="pwa-toast-dismiss">✕</button>
+    </div>
+
+</main>
+
+<!-- ════════════════ DECK BUILDER ════════════════ -->
+<div id="view-deckbuilder"
+     class="hidden fixed inset-0 z-[400] flex flex-col"
+     style="background:#0f172a; overflow:hidden">
+
+    <div class="glass-header px-3 py-2.5 flex items-center gap-2 flex-shrink-0 flex-wrap">
+        <button id="builder-close-btn" class="nav-btn flex-shrink-0 text-slate-400 hover:text-white">
+            ← Mazos
+        </button>
+        <div class="h-4 w-px bg-white/15 flex-shrink-0"></div>
+        <h2 id="builder-deck-name"
+            class="text-base font-extrabold outline-none border-b border-transparent
+                   focus:border-sky-400 transition-colors min-w-0 truncate max-w-[140px] sm:max-w-xs"
+            title="Click para renombrar"></h2>
+        <span id="builder-format-badge"
+              class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full
+                     bg-violet-400/15 text-violet-400 border border-violet-400/25 flex-shrink-0"></span>
+        <span id="builder-status" class="badge-invalid flex-shrink-0"></span>
+
+        <div class="ml-auto flex items-center gap-3 flex-shrink-0">
+            <span class="text-xs text-slate-400 hidden sm:block tabular-nums">
+                Main: <strong id="builder-main-count">0</strong><span id="builder-max-count">/60+</span>
+                · Side: <strong id="builder-side-count">0</strong>
+            </span>
+            <button id="builder-import-text-btn"
+                    class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/8 hover:bg-white/15 transition-colors">
+                📋 Importar lista
+            </button>
+            <button id="builder-export-btn" class="btn-primary text-xs py-1.5 px-3">
+                ↗ Exportar
+            </button>
+        </div>
+    </div>
+
+    <div class="flex flex-1 overflow-hidden">
+        <div class="builder-panel-left">
+            <div class="p-2 border-b border-white/8 flex-shrink-0">
+                <div class="relative">
+                    <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm pointer-events-none">🔍</span>
+                    <input type="text" id="builder-search-input"
+                           class="input-glass w-full pl-8 text-sm py-2"
+                           placeholder="Buscar carta...">
+                </div>
+            </div>
+            <div id="builder-search-results" class="flex-1 overflow-y-auto p-2 flex flex-col gap-1"></div>
+        </div>
+
+        <div class="flex-1 flex flex-col overflow-hidden min-w-0">
+            <div class="flex gap-1 px-3 py-2 border-b border-white/8 flex-shrink-0">
+                <button class="builder-zone-tab active" data-zone="mainboard">🃏 Mazo principal</button>
+                <button class="builder-zone-tab" data-zone="sideboard">🔄 Sideboard</button>
+            </div>
+            <div id="builder-deck-list" class="flex-1 overflow-y-auto p-3"></div>
+        </div>
+    </div>
+
+    <div id="builder-stats" class="border-t border-white/8 flex-shrink-0 bg-slate-950/80"></div>
 </div>
 
 <!-- ════════════════ FOOTER ════════════════ -->
@@ -303,6 +426,6 @@
     </div>
 </footer>
 
-<script type="module" src="js/main.js"></script>
+<script type="module" src="/src/main.js"></script>
 </body>
 </html>

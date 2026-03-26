@@ -1,5 +1,5 @@
-import { t }     from './i18n.js';
-import { state } from './state.js';
+import { t }     from '../i18n/index.js';
+import { state } from '../core/state.js';
 
 // ── TOAST ────────────────────────────────────────────────────
 const ICONS = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
